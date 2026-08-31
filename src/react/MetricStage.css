@@ -1,0 +1,28 @@
+.metric-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 24rem;
+}
+
+.metric-stage__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metric-stage__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.metric-stage__select {
+  padding: 0.5rem;
+  font: inherit;
+}
+
+.metric-stage__hint {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
