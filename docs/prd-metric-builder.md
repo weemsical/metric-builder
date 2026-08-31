@@ -94,6 +94,46 @@ not replace it.
 
 ---
 
+## Prior art — L11 (LevelEleven) alignment
+
+L11's Scorecard/KPI builder (`ascentcloud/l11`, `Metric__c`) is the most mature metric builder in the
+portfolio and is the conceptual ancestor of Next Level. Its model maps onto ours and validated
+several design choices; it also surfaced capabilities we are adopting.
+
+**Confirms our model.** L11 = `objectName` (source) + `aggregateField`/`aggregationType` (measure) +
+`userField` (subject). Its filter shape `{ field, comparator, value }` matches both our R1 design
+and Shepherd's `filters` table — three independent sources agree.
+
+**Adopted from L11 (folded into this PRD):**
+- **Count Distinct** aggregation, in addition to count/sum/avg/min/max. (See baseline model change
+  below.)
+- **First-class date field.** L11 separates `userField` (subject) from `dateField` (the date used
+  for period filtering). We promote an optional `dateField` to a first-class part of the model; R2
+  windowing and R1 date filters both consume it.
+- **Advanced filter logic** (R1): OR-grouping like `"1 AND (2 OR 3)"` and comma-as-OR, beyond plain
+  AND.
+- **Richer goals** (R3): min/max goal range, `targetIsMinimum` (= our `direction`), **pacing**
+  (steady / ramp-up / big-finish), and leaderboard **rank method** (score vs. percentage).
+- **Formula / composite metrics** (new **R5**): a metric defined as Add/Subtract/Multiply/Divide
+  over other metrics.
+
+**Baseline model change (Count Distinct).** `Aggregation` becomes
+`count | countDistinct | sum | avg | min | max`; `countDistinct` requires a `measure.field` (the
+field whose distinct values are counted) and `isMetricComplete` treats it like the other
+field-requiring aggregations.
+
+**Deliberately NOT adopted** (Next Level = L11 *without coaching or competitions*): waterline/ranking
+metrics as a distinct type, points/`pointMultiplier` gamification, and competition metrics. L11's
+cross-object relationship filters are Salesforce-specific and are **out of scope** for the non-SF
+hosts (Shepherd/Next Level/Coaching); the advanced filter logic we adopt operates on a single
+source's fields.
+
+> Note: `ascentcloud/platform-levelup` + `levelup-api` are the non-Salesforce React rewrite of L11
+> and are the closest UI/architecture reference for Next Level. This PRD models on `l11`
+> (richest model); the `platform-levelup` builder UX can be mined when we build the R-phase UIs.
+
+---
+
 ## Guiding principles
 
 1. **Domain-agnostic core.** No sales (or fitness, or geo) vocabulary in `core`. Domain meaning is
@@ -158,10 +198,16 @@ definitions that omit its new fields.
 ### Baseline (already met — regression guardrails)
 - **AC-0.1** Given a complete definition, `computeSubjectValues` returns one `SubjectValue` per
   distinct non-null subject, aggregated per `aggregation`, sorted by value descending.
-- **AC-0.2** `count` requires no field; all other aggregations require `measure.field`.
-  `isMetricComplete` reflects this.
+- **AC-0.2** `count` requires no field; all other aggregations (incl. `countDistinct`) require
+  `measure.field`. `isMetricComplete` reflects this.
 - **AC-0.3** `MetricStage` renders source → aggregation → field → subject, hides the field select
   for `count`, and surfaces source/field loading and error states.
+
+### R0.5 — Count Distinct (baseline enhancement, from L11)
+- **AC-0.7** `Aggregation` gains `countDistinct`; `aggregate(values, 'countDistinct')` returns the
+  number of distinct values. `count` behavior is unchanged (regression test).
+- **AC-0.8** In `computeSubjectValues`, `countDistinct` counts distinct non-null values of
+  `measure.field` per subject; the aggregation option appears in `MetricStage`.
 
 ### R0 — Persistence port
 - **AC-0.4** `core` exports an optional `MetricStore` port: `save(name, definition) → id`,
@@ -180,6 +226,13 @@ definitions that omit its new fields.
 - **AC-1.3** `computeSubjectValues` applies all filters with AND semantics before grouping; a row
   failing any filter is excluded.
 - **AC-1.4** The builder only offers operators valid for the chosen field's `FieldType`.
+- **AC-1.5** (from L11) A filter's `value` may be a comma-separated list, treated as **OR** for that
+  filter (e.g. `stage in [won, closed]`).
+- **AC-1.6** (from L11) `MetricDefinition` may carry optional `filterLogic: string` expressing
+  boolean combination by 1-based filter index (e.g. `"1 AND (2 OR 3)"`); absent `filterLogic`
+  defaults to all-AND (AC-1.3 unchanged). A pure `evaluateFilterLogic(results, logic)` parses and
+  evaluates the expression; invalid logic is a validation error surfaced by the builder, never a
+  crash. Cross-object/relationship filters (Salesforce-specific) are **out of scope**.
 
 ### R2 — Time windows & trends
 - **AC-2.1** `MetricDefinition` gains optional `window: { field, granularity }` where
@@ -198,6 +251,14 @@ definitions that omit its new fields.
   `red | amber | green` respecting `direction`.
 - **AC-3.3** A pure `classify(value, target, thresholds)` helper returns attainment (`value/target`)
   and RAG status; definitions without targets return no status.
+- **AC-3.4** (from L11) `target` may be a range `{ min, max }` instead of a single `value`;
+  attainment/RAG respect the range and `direction`.
+- **AC-3.5** (from L11) Optional `pacing: { strategy, excludeWeekends }` where `strategy = steady |
+  rampUp | bigFinish`; a pure `expectedPace(target, elapsedFraction, strategy)` returns the expected
+  value at a point in the period so hosts can show ahead/behind. No pacing → no expected value.
+- **AC-3.6** (from L11) Optional `rankMethod: 'score' | 'percentToGoal'` determines how subjects are
+  ranked/sorted for leaderboard display (Next Level's core need); default `score` preserves today's
+  descending-by-value ordering.
 
 ### R4 — Geography / mapping
 - **AC-4.1** The builder allows selecting a `geography` field as the subject or as a measured
@@ -205,6 +266,18 @@ definitions that omit its new fields.
 - **AC-4.2** `SubjectValue` may optionally carry `coordinates?: { lat, lng }` so map hosts can plot
   results; non-geo metrics never populate it.
 - **AC-4.3** Aggregations invalid for geography (e.g. `sum` of coordinates) are not offered.
+
+### R5 — Formula / composite metrics (from L11)
+- **AC-5.1** A composite metric references two or more component `MetricDefinition`s combined by an
+  operation: `formula: { op, components }` where `op = add | subtract | multiply | divide`.
+- **AC-5.2** A pure `computeFormula(componentResults, op)` combines per-subject values across
+  components on matching subject keys; a subject missing from a component is treated per documented
+  rule (e.g. absent → excluded for `divide`, 0 for `add`); `divide` by zero yields no value for that
+  subject, never a crash/`Infinity`.
+- **AC-5.3** Components are ordinary `MetricDefinition`s (each independently computable), so a formula
+  reuses all of R0–R4; nesting depth beyond one level is out of scope for the first cut.
+- **AC-5.4** The builder lets a user pick components and an operation; `isMetricComplete` is true only
+  when every component is complete and an `op` is chosen.
 
 ### Error / edge cases (all roadmap items)
 - **AC-E.1** Unknown source id from a provider surfaces a user-facing error, never a crash
@@ -259,13 +332,20 @@ compute → provider (if I/O) → UI.
 
 **Data model change summary (additive, backward compatible)**
 ```
+Aggregation = count | countDistinct | sum | avg | min | max     // R0.5 adds countDistinct
+
 MetricDefinition {
   sourceId?, measure?, subjectField?          // existing
+  dateField?                                  // promoted first-class (from L11); used by R1/R2
   filters?: Filter[]                          // R1
+  filterLogic?: string                        // R1 (from L11: "1 AND (2 OR 3)")
   window?: { field, granularity }             // R2
   range?:  { field, lastDays }                // R2
-  target?: { value, direction }               // R3
+  target?: { value | { min, max }, direction }// R3 (range from L11)
   thresholds?: { amber, green }               // R3
+  pacing?: { strategy, excludeWeekends }      // R3 (from L11)
+  rankMethod?: 'score' | 'percentToGoal'      // R3 (from L11)
+  formula?: { op, components: MetricDefinition[] } // R5 (from L11)
 }
 SubjectValue { subject, value, coordinates? } // R4 adds coordinates
 ```
@@ -307,12 +387,16 @@ Vertical, tracer-bullet slices. Each is shippable and independently valuable; or
 dependency and demand.
 
 1. **R0 — Persistence port** (small, unblocks "named metrics" in every host).
-2. **R1 — Filters** (highest cross-product demand; foundational for meaningful metrics).
-3. **R2 — Time windows & trends** (delivers the "ongoing performance" story; needed by Coaching &
+2. **R0.5 — Count Distinct** (tiny baseline add from L11; do alongside R0 or R1).
+3. **R1 — Filters** (highest cross-product demand; foundational). Includes L11 comma-OR and optional
+   `filterLogic`.
+4. **R2 — Time windows & trends** (delivers the "ongoing performance" story; needed by Coaching &
    Next Level).
-4. **R3 — Targets & thresholds** (builds on R2; core to Coaching).
-5. **R4 — Geography / mapping** (unblocks **Shepard**, the geopointe-like product; `geography` type
+5. **R3 — Targets & thresholds** (builds on R2; core to Coaching). Includes L11 goal range, pacing,
+   and rank method (Next Level).
+6. **R4 — Geography / mapping** (unblocks **Shepherd**, the geopointe-like product; `geography` type
    already exists in the model).
+7. **R5 — Formula / composite metrics** (from L11; reuses R0–R4 — last because it composes them).
 
 ---
 
@@ -338,3 +422,11 @@ dependency and demand.
    minutes) in a single definition, or is one measure per metric acceptable for the roadmap?
 7. **Subject identity vs. label.** Subjects currently group by a raw field value (e.g. `traineeId`).
    Do hosts need a display-name resolution step, or is that purely host-side?
+8. **Fiscal periods (from L11).** L11 supports fiscal-custom Weekly/Monthly/Quarterly and
+   "Triannually" in addition to calendar periods. Do any non-SF hosts need fiscal calendars in R2, or
+   is calendar `daily|weekly|monthly|quarterly|annually` sufficient for now?
+9. **Formula nesting & multiple measures (R5).** First cut is single-level formulas over
+   single-measure components. Do we need nested formulas or multi-measure components soon? (Related to
+   open question #6.)
+10. **Pacing period boundary (R3).** Pacing needs a period definition (start/end + elapsed fraction).
+    Does it derive from R2's `window`, or is it configured independently on the target?
