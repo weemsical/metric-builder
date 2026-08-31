@@ -23,6 +23,54 @@ Decisions locked in discovery:
 
 ---
 
+## Resolved decisions (from grill-me)
+
+Locked design decisions that constrain the phases below. IDs are referenced inline in the phase ACs.
+
+**Foundations**
+- **D1 — Date model.** One `toEpoch(value)` seam parses ISO 8601 strings / epoch `number` / `Date`
+  → epoch ms for all compute. Saved definitions store date operands as **ISO 8601 strings**.
+- **D2 — Timezone.** Bucket in **UTC by default**; optional `window.timeZone` (IANA) uses
+  `Intl.DateTimeFormat` for zone-correct calendar parts. No new dependency.
+- **D3 — Week start.** Default **Sunday** (`weekStartsOn: 0`); optional `window.weekStartsOn` (0–6).
+
+**R1 — Filters**
+- **D4 — Coercion & case.** Numeric/date/bool coerce via `Number`/`toEpoch`/`Boolean`; coercion
+  failure = filter miss. Text `equals`/`contains` are **case-insensitive**.
+- **D5 — filterLogic.** Hand-written recursive-descent parser → AST (no `eval`, no dep). Grammar:
+  1-based refs, `AND` (higher precedence), `OR`, parens, **no `NOT`** v1. Comma-in-value = OR
+  within that filter. Invalid logic → structured surfaced error, never throws.
+
+**R0 — Persistence**
+- **D6 — Store ids.** `createMemoryStore` uses a **monotonic counter** (`m1`…) by default; optional
+  injectable `idFactory`.
+
+**R2 — Windows & trends**
+- **D7 — Empty buckets.** **Dense** contiguous buckets across the range; empty = **`0`** for
+  count/sum, **`null`** for avg/min/max/countDistinct. Range = `range.lastDays` if set, else observed
+  min→max.
+- **D8 — Range vs window split.** `range` is a **row filter applied in both** `computeSubjectValues`
+  and `computeSubjectSeries`; `window` drives **only** the series. Rank/classify (R3) use the single
+  **period-total** from `computeSubjectValues`.
+
+**R3 — Targets, pacing, ranking**
+- **D11 — Pacing.** Period derived from `window` (granularity + timeZone); host passes an **`asOf`**
+  timestamp (no `Date.now` in `core`); `elapsedFraction = (asOf−start)/(end−start)`;
+  `excludeWeekends` counts business days. No window ⇒ pacing inert unless target carries a period.
+
+**R5 — Formula / composite**
+- **D9 — Components.** **Inline `MetricDefinition[]`**; `computeFormula` pure over already-computed
+  component results.
+- **D10 — Missing/divide.** **Outer-join**; missing value = `0` for add/subtract/multiply; `divide`
+  with missing/zero denominator = **excluded** (no `Infinity`/`NaN`/throw), missing numerator = `0`.
+
+**Deferred out of v1** (revisit when a host needs them)
+- **D12** no `version` field (additive-optional evolution). **D13** calendar periods only (no
+  fiscal/Triannually). **D14** one measure per metric (multi-measure via R5). **D15** group by raw
+  subject value (hosts resolve id→name).
+
+---
+
 # Phase R0 — Persistence port (deep)
 
 **Goal:** an optional way for hosts to save, load, list, and remove named metric definitions,
@@ -64,9 +112,8 @@ without the library owning storage. Unblocks "named metrics" in every product.
 Full suite green at 100% coverage; playground can save a metric, reload it, and list saved metrics.
 
 ### Risks / notes
-- **Id generation must be deterministic-friendly for tests** (no `Math.random`/`Date.now` in
-  scripts is a *workflow* constraint, not a runtime one — but prefer an injectable id factory or a
-  monotonic counter so tests stay deterministic and coverage is trivial).
+- **Id generation (D6).** Default to a monotonic counter (`m1`…); accept an optional injectable
+  `idFactory`. Deterministic for tests, trivial coverage.
 - Keep `MetricStore` free of auth/RBAC — that is host territory (Shepherd scopes via sync rules).
 
 ---
@@ -159,10 +206,10 @@ Full suite green at 100% coverage; playground filters the gym seed (e.g. only `m
 the ranked results reflect the filter.
 
 ### Risks / notes
-- **Value typing.** Store `value` loosely (PRD/Shepherd use JSON) but coerce per field type at
-  compare time (reuse the `Number(...)`/`Boolean` discipline already in `computeSubjectValues`).
-- **Date comparison** needs a defined representation (ISO string vs epoch). Decide here and reuse in
-  R2 windowing — keep them consistent.
+- **Value typing (D4).** Store `value` loosely (PRD/Shepherd use JSON) but coerce per field type at
+  compare time; coercion failure = filter miss. Text `equals`/`contains` case-insensitive.
+- **Date comparison (D1).** Use the shared `toEpoch()` seam (ISO string / epoch / `Date` → ms);
+  definitions store ISO 8601. Same seam serves R2 windowing.
 - Operator gating lives in **one** pure helper so UI and compute can't drift.
 
 ---
@@ -190,9 +237,10 @@ alter `computeSubjectValues`.**
   renders controls; a host renders the series (no chart in this package).
 - **dev:** seed rows with dates spanning weeks/months to show a trend.
 
-### Open decision (resolve at phase start)
-- **Timezone anchor** for bucket boundaries: org / viewer / UTC. Recommend **UTC** with a documented
-  option, so buckets are deterministic and tests are stable. (PRD open question #2.)
+### Resolved decisions
+- **D2** UTC default, optional IANA `window.timeZone`. **D3** Sunday week-start, optional
+  `weekStartsOn`. **D7** dense buckets, type-aware empties (0 count/sum, null others). **D8** `range`
+  filters both compute fns; `window` only the series.
 
 ### Checkpoint
 Series function tested at boundaries; playground shows per-subject weekly buckets; `computeSubjectValues`
@@ -226,9 +274,10 @@ or a single value).
   `MetricStage` shows target/range + thresholds + pacing + rank method; hosts render RAG chips and
   the ranked leaderboard.
 
-### Open decisions (resolve at phase start)
-- **Pacing period boundary** — derive elapsed fraction from R2's `window`, or configure a period on
-  the target independently? (PRD open question #10.)
+### Resolved decisions
+- **D11** Pacing period = current `window` period (granularity + timeZone); host passes `asOf`
+  (`core` stays pure/deterministic); `excludeWeekends` counts business days; no window ⇒ pacing inert
+  unless the target carries a period. Rank/classify use the period-total (D8).
 
 ### Checkpoint
 `classify` covers higher/lower-is-better, range targets, all three statuses, no-target;
@@ -299,11 +348,10 @@ prior phases.
   saved-metric picker from R0) and an operation; `MetricStage` branches into formula mode.
 - **dev:** seed a formula (e.g. `sum(reps) / countDistinct(session)` = reps per session) to demo.
 
-### Open decisions (resolve at phase start)
-- **Component sourcing** — inline `MetricDefinition`s vs. references to R0 saved metrics (by id).
-  References keep formulas small but couple to the store; inline is self-contained. (PRD open
-  question #9.)
-- **Missing-subject semantics** per `op` (exclude vs. treat as 0) — lock and test explicitly.
+### Resolved decisions
+- **D9** Components are **inline `MetricDefinition[]`** (self-contained; `computeFormula` pure over
+  computed results). **D10** Outer-join; missing = `0` for add/subtract/multiply; `divide` with
+  missing/zero denominator = excluded (no `Infinity`/`NaN`), missing numerator = `0`.
 
 ### Checkpoint
 `computeFormula` covers all four ops, subject alignment, divide-by-zero, and missing subjects; UI
@@ -311,19 +359,17 @@ composes a two-component formula; suites green at 100%.
 
 ---
 
-## Cross-cutting: decisions to resolve as phases start
+## Cross-cutting: still-open (not yet gated by grill-me)
 
-Carried from the PRD open questions; each is a small gate, not a blocker for the whole plan:
+Most design branches are locked in **Resolved decisions** above. These remain genuinely open:
 1. **Server vs. client compute** (R1/R2) — Shepherd is client-side (local SQLite) by nature; Arena
    may push filters to the gateway. Keep compute pure and host-agnostic; the `data` adapter decides
-   push-down per host.
-2. **Timezone anchor** (R2) — decide before `bucketByWindow`.
-3. **Next Level ranking semantics** — beyond descending sort (ties/percentiles/deltas)?
-4. **Definition versioning** — add `version` to `MetricDefinition` if additive-optional evolution
-   proves insufficient; revisit before R4.
-5. **Multiple measures per metric** — one measure per metric assumed through R4.
-6. **Subject identity vs. label** — grouping stays on raw field value; display-name resolution is
-   host-side unless a phase proves otherwise.
+   push-down per host. (Not blocking — compute stays pure regardless.)
+2. **Next Level ranking semantics** — D-decisions cover score vs. percentToGoal ordering; ties/
+   percentiles/period-over-period deltas remain open until Next Level scopes them.
+
+Deferred out of v1 (see D12–D15): definition versioning, fiscal periods, multiple measures per
+metric, subject display-name resolution.
 
 ## Suggested sequence
 R0 → R0.5 → R1 → R2 → R3 → R4 → R5 (dependency- and demand-ordered). R0, R0.5, and R1 are ready to

@@ -402,31 +402,23 @@ dependency and demand.
 
 ## Open questions
 
+Most design branches were resolved in a grill-me pass — see **Resolved decisions (D1–D15)** in
+`docs/plan-metric-builder-roadmap.md`. What remains genuinely open:
+
 1. **Server vs. client compute for filters/windows.** Does the platform gateway support server-side
    filtering/bucketing, or should `data` always fetch rows and compute client-side? Affects R1/R2
-   provider contract and performance at scale.
-2. **Time zones.** Which timezone anchors window bucketing — org, viewer, or UTC? Needs a decision
-   before R2 to keep buckets deterministic.
-3. **Next Level ranking semantics.** Is ranking just "sort subject values descending" (already
-   supported) or does it need ties, percentiles, or period-over-period deltas? Note Next Level is
-   L11 **without coaching or competitions**, so ranking/leaderboard display is its core need.
-4. **Shepherd data shape (partially answered).** Shepherd's `records` table already carries flat
-   `latitude Float?` / `longitude Float?` plus address parts (`street/city/state/postal_code/
-   country`) and `custom_fields Json`; `polygons.geometry` is GeoJSON in a `Json` column. So the R4
-   `coordinates: { lat, lng }` contract maps directly to `records`. Open: how (or whether) to
-   surface polygon/GeoJSON geometry as a subject or dimension, and how `custom_fields` map to
-   `SourceField`s.
-5. **Definition versioning.** Do we need a `version` field on `MetricDefinition` for migration as
-   the model grows, or is additive-optional evolution sufficient?
-6. **Multiple measures per metric.** Any near-term need for more than one measure (e.g. reps *and*
-   minutes) in a single definition, or is one measure per metric acceptable for the roadmap?
-7. **Subject identity vs. label.** Subjects currently group by a raw field value (e.g. `traineeId`).
-   Do hosts need a display-name resolution step, or is that purely host-side?
-8. **Fiscal periods (from L11).** L11 supports fiscal-custom Weekly/Monthly/Quarterly and
-   "Triannually" in addition to calendar periods. Do any non-SF hosts need fiscal calendars in R2, or
-   is calendar `daily|weekly|monthly|quarterly|annually` sufficient for now?
-9. **Formula nesting & multiple measures (R5).** First cut is single-level formulas over
-   single-measure components. Do we need nested formulas or multi-measure components soon? (Related to
-   open question #6.)
-10. **Pacing period boundary (R3).** Pacing needs a period definition (start/end + elapsed fraction).
-    Does it derive from R2's `window`, or is it configured independently on the target?
+   provider contract and performance at scale. (Not blocking — compute stays pure and host-agnostic;
+   the `data` adapter decides push-down per host.)
+2. **Next Level ranking beyond score/percent.** D-decisions cover score vs. percent-to-goal ordering;
+   **ties, percentiles, and period-over-period deltas** remain open until Next Level scopes them.
+   Next Level is L11 **without coaching or competitions**, so leaderboard display is its core need.
+3. **Shepherd polygon geometry & custom fields.** `records` map directly to `coordinates {lat,lng}`
+   (resolved). Still open: whether/how to surface `polygons.geometry` (GeoJSON) as a subject or
+   dimension, and how `records.custom_fields (Json)` map to `SourceField`s. Confirm when R4 planning
+   pulls the Shepherd repo.
+
+**Resolved (recorded as decisions in the plan):** date representation → D1; timezone/week-start → D2/
+D3; empty-bucket & range/window split → D7/D8; pacing period → D11; formula sourcing & missing-value
+semantics → D9/D10; filter coercion/case & `filterLogic` → D4/D5; store ids → D6. **Deferred out of
+v1:** definition versioning (D12), fiscal periods incl. Triannually (D13), multiple measures per
+metric (D14), subject display-name resolution (D15).
