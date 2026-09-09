@@ -9,14 +9,50 @@ store, auth, or gateway.
 
 - `@ascentcloud/metric-builder/core` — framework-agnostic metric model, pure transforms, types, and
   the `MetricDataProvider` port. No React, no Redux.
-- `@ascentcloud/metric-builder/data` — platform-gateway data adapter (RTK Query), parameterized by an
-  injected base URL and auth headers. Optional — a host may implement the provider port itself.
+- `@ascentcloud/metric-builder/data` — platform-gateway data adapter (`fetch`-based), parameterized
+  by an injected base URL and auth headers. Optional — a host may implement the provider port itself.
 - `@ascentcloud/metric-builder/react` — `MetricBuilderProvider`, the `useMetricBuilder` hook, and the
   `MetricStage` UI. Decoupled from `@ascentcloud/platform-ui`; the host supplies org id and a provider.
 
+## Quick start
+
+Wire the controlled `MetricStage` to a provider; the host owns the definition state:
+
+```tsx
+import { useState } from 'react';
+import { emptyMetricDefinition, createMockProvider, type MetricDefinition } from '@ascentcloud/metric-builder/core';
+import { MetricBuilderProvider, MetricStage } from '@ascentcloud/metric-builder/react';
+
+const provider = createMockProvider(seeds); // or createGatewayProvider(config) from /data, or your own
+
+export const Builder = () => {
+  const [definition, setDefinition] = useState<MetricDefinition>(emptyMetricDefinition());
+  return (
+    <MetricBuilderProvider dataProvider={provider}>
+      <MetricStage definition={definition} onChange={setDefinition} />
+    </MetricBuilderProvider>
+  );
+};
+```
+
+Compute a leaderboard from a complete definition with `provider.queryData(definition)` (or, for rows
+you already hold, the pure `computeSubjectValues(rows, definition)`). See `src/dev/App.tsx` for the
+full wiring.
+
+## Documentation
+
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the code is structured, the three layers, the
+  data flow, and where the roadmap extends. **Start here to understand the codebase.**
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — setup, the TDD workflow, adding a capability, and releasing.
+- [`docs/prd-metric-builder.md`](docs/prd-metric-builder.md) — product vision, host products,
+  guiding principles, and per-roadmap acceptance criteria.
+- [`docs/plan-metric-builder-roadmap.md`](docs/plan-metric-builder-roadmap.md) — phased plan and
+  resolved design decisions.
+
 ## Peer dependencies
 
-`react`, `react-dom`, `@reduxjs/toolkit`, `react-redux` are provided by the host.
+`react` and `react-dom` are provided by the host. The `data` adapter uses the platform `fetch` API
+and adds no Redux dependency.
 
 ## Install
 
