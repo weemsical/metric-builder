@@ -42,6 +42,59 @@ describe('computeSubjectValues', () => {
     ]);
   });
 
+  it('is unchanged by an empty filters array (backward compat)', () => {
+    const withEmpty = computeSubjectValues(rows, {
+      sourceId: 'gym',
+      measure: { field: 'reps', aggregation: 'sum' },
+      subjectField: 'traineeId',
+      filters: [],
+    });
+    const without = computeSubjectValues(rows, {
+      sourceId: 'gym',
+      measure: { field: 'reps', aggregation: 'sum' },
+      subjectField: 'traineeId',
+    });
+    expect(withEmpty).toEqual(without);
+  });
+
+  it('applies filters (AND) before aggregating', () => {
+    expect(
+      computeSubjectValues(rows, {
+        sourceId: 'gym',
+        measure: { field: 'reps', aggregation: 'sum' },
+        subjectField: 'traineeId',
+        filters: [{ field: 'reps', operator: 'gte', value: 10 }],
+      })
+    ).toEqual([{ subject: 'ana', value: 30 }]);
+  });
+
+  it('honors filterLogic to OR filters', () => {
+    expect(
+      computeSubjectValues(rows, {
+        sourceId: 'gym',
+        measure: { aggregation: 'count' },
+        subjectField: 'traineeId',
+        filters: [
+          { field: 'reps', operator: 'gte', value: 100 },
+          { field: 'reps', operator: 'lt', value: 10 },
+        ],
+        filterLogic: '1 OR 2',
+      })
+    ).toEqual([{ subject: 'bo', value: 1 }]);
+  });
+
+  it('excludes all rows when filterLogic is invalid', () => {
+    expect(
+      computeSubjectValues(rows, {
+        sourceId: 'gym',
+        measure: { aggregation: 'count' },
+        subjectField: 'traineeId',
+        filters: [{ field: 'reps', operator: 'gte', value: 10 }],
+        filterLogic: 'banana',
+      })
+    ).toEqual([]);
+  });
+
   it('counts distinct non-null field values per subject', () => {
     const sessions = [
       { trainerId: 't1', traineeId: 'ana' },

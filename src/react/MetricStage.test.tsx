@@ -138,6 +138,59 @@ describe('MetricStage', () => {
     });
   });
 
+  it('adds a filter with the first field and a default operator', async () => {
+    const onChange = vi.fn();
+    renderStage(
+      createMockProvider([seed]),
+      { sourceId: 'gym', measure: { aggregation: 'count' } },
+      onChange
+    );
+    await screen.findByLabelText('Subject');
+    await userEvent.click(screen.getByRole('button', { name: /add filter/i }));
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      measure: { aggregation: 'count' },
+      filters: [{ field: 'traineeId', operator: 'equals', value: '' }],
+    });
+  });
+
+  it('renders a row per existing filter with type-valid operators', async () => {
+    renderStage(createMockProvider([seed]), {
+      sourceId: 'gym',
+      measure: { aggregation: 'count' },
+      filters: [{ field: 'reps', operator: 'gte', value: 30 }],
+    });
+    const operator = await screen.findByLabelText('Operator');
+    expect(operator).toHaveTextContent('Greater than or equal');
+    expect(operator).not.toHaveTextContent('Contains');
+  });
+
+  it('changes and removes an existing filter', async () => {
+    const onChange = vi.fn();
+    renderStage(
+      createMockProvider([seed]),
+      {
+        sourceId: 'gym',
+        measure: { aggregation: 'count' },
+        filters: [{ field: 'reps', operator: 'gte', value: 30 }],
+      },
+      onChange
+    );
+    await userEvent.selectOptions(await screen.findByLabelText('Operator'), 'lt');
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      measure: { aggregation: 'count' },
+      filters: [{ field: 'reps', operator: 'lt', value: 30 }],
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: /remove/i }));
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      measure: { aggregation: 'count' },
+      filters: [],
+    });
+  });
+
   it('renders empty selections when no measure is set yet', async () => {
     renderStage(createMockProvider([seed]), { sourceId: 'gym' });
     expect(await screen.findByLabelText('Aggregation')).toHaveValue('');

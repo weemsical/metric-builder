@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react';
 import {
+  removeFilter,
+  updateFilter,
   withAggregation,
+  withFilter,
   withMeasureField,
   withSource,
   withSubjectField,
   type Aggregation,
   type MetricDefinition,
 } from '../core/metricDefinition';
-import type { MetricSource, SourceField } from '../core/types';
+import { operatorsForFieldType } from '../core/operators';
+import type {
+  Filter,
+  FilterOperator,
+  MetricSource,
+  SourceField,
+} from '../core/types';
 import { useMetricDataProvider } from './metricBuilderContext';
 
 export type UseMetricBuilder = {
@@ -21,6 +30,11 @@ export type UseMetricBuilder = {
   selectAggregation: (aggregation: Aggregation) => void;
   selectField: (field: string) => void;
   selectSubject: (subjectField: string) => void;
+  filters: Filter[];
+  operatorsFor: (field: string) => FilterOperator[];
+  addFilter: (filter: Filter) => void;
+  changeFilter: (index: number, filter: Filter) => void;
+  removeFilter: (index: number) => void;
 };
 
 type Loadable<T> = { status: 'loading' | 'error'; value: T } | { status: 'ready'; value: T };
@@ -76,5 +90,15 @@ export const useMetricBuilder = (
     selectField: (field) => onChange(withMeasureField(definition, field)),
     selectSubject: (subjectField) =>
       onChange(withSubjectField(definition, subjectField)),
+    filters: definition.filters ?? [],
+    operatorsFor: (field) =>
+      operatorsForFieldType(
+        fields.find((candidate) => candidate.apiName === field)?.type ??
+          'unknown'
+      ),
+    addFilter: (filter) => onChange(withFilter(definition, filter)),
+    changeFilter: (index, filter) =>
+      onChange(updateFilter(definition, index, filter)),
+    removeFilter: (index) => onChange(removeFilter(definition, index)),
   };
 };

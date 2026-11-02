@@ -81,6 +81,51 @@ describe('useMetricBuilder', () => {
     expect(result.current.fieldsLoading).toBe(false);
   });
 
+  it('exposes filter state, operatorsFor, and add/change/remove helpers', async () => {
+    const onChange = vi.fn();
+    const { result } = renderBuilder(
+      createMockProvider([seed]),
+      { sourceId: 'gym' },
+      onChange
+    );
+    await waitFor(() => expect(result.current.fields).toHaveLength(2));
+
+    expect(result.current.filters).toEqual([]);
+    expect(result.current.operatorsFor('reps')).toEqual(
+      expect.arrayContaining(['gte', 'lt'])
+    );
+    expect(result.current.operatorsFor('traineeId')).toContain('contains');
+    expect(result.current.operatorsFor('nope')).toContain('equals');
+
+    result.current.addFilter({ field: 'reps', operator: 'gte', value: 30 });
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      filters: [{ field: 'reps', operator: 'gte', value: 30 }],
+    });
+  });
+
+  it('changes and removes filters', async () => {
+    const onChange = vi.fn();
+    const { result } = renderBuilder(
+      createMockProvider([seed]),
+      {
+        sourceId: 'gym',
+        filters: [{ field: 'reps', operator: 'gte', value: 30 }],
+      },
+      onChange
+    );
+    await waitFor(() => expect(result.current.fields).toHaveLength(2));
+
+    result.current.changeFilter(0, { field: 'reps', operator: 'lt', value: 10 });
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      filters: [{ field: 'reps', operator: 'lt', value: 10 }],
+    });
+
+    result.current.removeFilter(0);
+    expect(onChange).toHaveBeenCalledWith({ sourceId: 'gym', filters: [] });
+  });
+
   it('exposes handlers that emit transformed definitions', async () => {
     const onChange = vi.fn();
     const { result } = renderBuilder(

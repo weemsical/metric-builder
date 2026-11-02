@@ -1,4 +1,5 @@
 import type { Aggregation, MetricDefinition } from '../core/metricDefinition';
+import { FilterRow } from './FilterRow';
 import { useMetricBuilder } from './useMetricBuilder';
 import './MetricStage.css';
 
@@ -117,6 +118,33 @@ export const MetricStage = ({ definition, onChange }: MetricStageProps) => {
               ))}
             </select>
           </label>
+
+          <div className="metric-stage__filters">
+            <span className="metric-stage__label">Filters</span>
+            {builder.filters.map((filter, index) => (
+              <FilterRow
+                key={index}
+                filter={filter}
+                fields={builder.fields}
+                operatorsFor={builder.operatorsFor}
+                onChange={(next) => builder.changeFilter(index, next)}
+                onRemove={() => builder.removeFilter(index)}
+              />
+            ))}
+            <button
+              type="button"
+              disabled={builder.fields.length === 0}
+              onClick={() =>
+                builder.addFilter({
+                  field: builder.fields[0].apiName,
+                  operator: builder.operatorsFor(builder.fields[0].apiName)[0],
+                  value: '',
+                })
+              }
+            >
+              Add filter
+            </button>
+          </div>
         </>
       )}
     </div>

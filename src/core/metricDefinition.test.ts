@@ -2,12 +2,16 @@ import { describe, expect, it } from 'vitest';
 import {
   emptyMetricDefinition,
   isMetricComplete,
+  removeFilter,
+  updateFilter,
   withAggregation,
+  withFilter,
   withMeasureField,
   withSource,
   withSubjectField,
   type MetricDefinition,
 } from './metricDefinition';
+import type { Filter } from './types';
 
 describe('emptyMetricDefinition', () => {
   it('starts with nothing selected', () => {
@@ -82,6 +86,45 @@ describe('withSubjectField', () => {
   it('sets the subject field', () => {
     const def: MetricDefinition = { sourceId: 'src-1' };
     expect(withSubjectField(def, 'ownerId').subjectField).toBe('ownerId');
+  });
+});
+
+describe('filter helpers', () => {
+  const a: Filter = { field: 'stage', operator: 'equals', value: 'Won' };
+  const b: Filter = { field: 'amount', operator: 'gte', value: 1000 };
+
+  it('withFilter appends to an empty definition without mutating it', () => {
+    const def: MetricDefinition = { sourceId: 'crm' };
+    const next = withFilter(def, a);
+    expect(next.filters).toEqual([a]);
+    expect(def.filters).toBeUndefined();
+  });
+
+  it('withFilter appends to existing filters immutably', () => {
+    const def: MetricDefinition = { sourceId: 'crm', filters: [a] };
+    const next = withFilter(def, b);
+    expect(next.filters).toEqual([a, b]);
+    expect(def.filters).toEqual([a]);
+  });
+
+  it('updateFilter replaces the filter at an index', () => {
+    const def: MetricDefinition = { sourceId: 'crm', filters: [a, b] };
+    const next = updateFilter(def, 0, b);
+    expect(next.filters).toEqual([b, b]);
+    expect(def.filters).toEqual([a, b]);
+  });
+
+  it('removeFilter drops the filter at an index', () => {
+    const def: MetricDefinition = { sourceId: 'crm', filters: [a, b] };
+    const next = removeFilter(def, 0);
+    expect(next.filters).toEqual([b]);
+    expect(def.filters).toEqual([a, b]);
+  });
+
+  it('updateFilter and removeFilter tolerate a definition with no filters', () => {
+    const def: MetricDefinition = { sourceId: 'crm' };
+    expect(updateFilter(def, 0, a).filters).toEqual([]);
+    expect(removeFilter(def, 0).filters).toEqual([]);
   });
 });
 

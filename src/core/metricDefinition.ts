@@ -1,3 +1,5 @@
+import type { Filter } from './types';
+
 export type Aggregation =
   | 'count'
   | 'sum'
@@ -15,6 +17,8 @@ export type MetricDefinition = {
   sourceId?: string;
   measure?: Measure;
   subjectField?: string;
+  filters?: Filter[];
+  filterLogic?: string;
 };
 
 export const emptyMetricDefinition = (): MetricDefinition => ({});
@@ -47,6 +51,33 @@ export const withSubjectField = (
 ): MetricDefinition => ({
   ...definition,
   subjectField,
+});
+
+export const withFilter = (
+  definition: MetricDefinition,
+  filter: Filter
+): MetricDefinition => ({
+  ...definition,
+  filters: [...(definition.filters ?? []), filter],
+});
+
+export const updateFilter = (
+  definition: MetricDefinition,
+  index: number,
+  filter: Filter
+): MetricDefinition => ({
+  ...definition,
+  filters: (definition.filters ?? []).map((existing, i) =>
+    i === index ? filter : existing
+  ),
+});
+
+export const removeFilter = (
+  definition: MetricDefinition,
+  index: number
+): MetricDefinition => ({
+  ...definition,
+  filters: (definition.filters ?? []).filter((_, i) => i !== index),
 });
 
 export const isMetricComplete = (definition: MetricDefinition): boolean => {

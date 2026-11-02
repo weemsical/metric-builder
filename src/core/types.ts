@@ -30,3 +30,22 @@ export type SubjectValue = {
   subject: string;
   value: number;
 };
+
+export type FilterOperator =
+  | 'equals'
+  | 'notEquals'
+  | 'gt'
+  | 'gte'
+  | 'lt'
+  | 'lte'
+  | 'contains'
+  | 'isTrue'
+  | 'isFalse'
+  | 'isNull'
+  | 'isNotNull';
+
+export type Filter = {
+  field: string;
+  operator: FilterOperator;
+  value?: unknown;
+};

@@ -1,10 +1,27 @@
 import { aggregate } from './aggregate';
+import { matchesFilter } from './applyFilters';
+import { evaluateFilterLogic } from './evaluateFilterLogic';
 import {
   isMetricComplete,
   type Aggregation,
   type MetricDefinition,
 } from './metricDefinition';
-import type { SubjectValue } from './types';
+import type { Filter, SubjectValue } from './types';
+
+const filterRows = (
+  rows: Array<Record<string, unknown>>,
+  filters: Filter[] | undefined,
+  filterLogic: string | undefined
+): Array<Record<string, unknown>> => {
+  if (!filters || filters.length === 0) {
+    return rows;
+  }
+  return rows.filter((row) => {
+    const results = filters.map((filter) => matchesFilter(row, filter));
+    const outcome = evaluateFilterLogic(results, filterLogic);
+    return outcome.ok && outcome.value;
+  });
+};
 
 const reduceValues = (
   values: unknown[],
@@ -33,10 +50,10 @@ export const computeSubjectValues = (
     return [];
   }
 
-  const { measure, subjectField } = definition;
+  const { measure, subjectField, filters, filterLogic } = definition;
   const groups = new Map<string, unknown[]>();
 
-  for (const row of rows) {
+  for (const row of filterRows(rows, filters, filterLogic)) {
     const subject = row[subjectField as string];
     if (subject === null || subject === undefined) {
       continue;
