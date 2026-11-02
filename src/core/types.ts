@@ -49,3 +49,32 @@ export type Filter = {
   operator: FilterOperator;
   value?: unknown;
 };
+
+export type Granularity =
+  | 'daily'
+  | 'weekly'
+  | 'monthly'
+  | 'quarterly'
+  | 'annually';
+
+export type Window = {
+  field: string;
+  granularity: Granularity;
+  timeZone?: string;
+  weekStartsOn?: number;
+};
+
+export type Range = {
+  field: string;
+  lastDays: number;
+};
+
+export type SeriesPoint = {
+  bucket: string;
+  value: number | null;
+};
+
+export type SubjectSeries = {
+  subject: string;
+  points: SeriesPoint[];
+};

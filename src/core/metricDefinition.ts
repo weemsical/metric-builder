@@ -1,4 +1,4 @@
-import type { Filter } from './types';
+import type { Filter, Range, Window } from './types';
 
 export type Aggregation =
   | 'count'
@@ -19,6 +19,8 @@ export type MetricDefinition = {
   subjectField?: string;
   filters?: Filter[];
   filterLogic?: string;
+  window?: Window;
+  range?: Range;
 };
 
 export const emptyMetricDefinition = (): MetricDefinition => ({});
@@ -79,6 +81,16 @@ export const removeFilter = (
   ...definition,
   filters: (definition.filters ?? []).filter((_, i) => i !== index),
 });
+
+export const withWindow = (
+  definition: MetricDefinition,
+  window: Window
+): MetricDefinition => ({ ...definition, window });
+
+export const withRange = (
+  definition: MetricDefinition,
+  range: Range
+): MetricDefinition => ({ ...definition, range });
 
 export const isMetricComplete = (definition: MetricDefinition): boolean => {
   if (!definition.sourceId || !definition.subjectField || !definition.measure) {

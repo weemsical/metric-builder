@@ -19,6 +19,19 @@ const seed: MockSourceSeed = {
   rows: [{ traineeId: 'ana', reps: 10 }],
 };
 
+const datedSeed: MockSourceSeed = {
+  source: { id: 'crm', name: 'Sales', enabled: true },
+  describe: {
+    type: 'activity',
+    fields: [
+      { apiName: 'owner', label: 'Owner', type: 'text', isPrimaryKey: false },
+      { apiName: 'amount', label: 'Amount', type: 'number', isPrimaryKey: false },
+      { apiName: 'closedAt', label: 'Closed At', type: 'date', isPrimaryKey: false },
+    ],
+  },
+  rows: [{ owner: 'Jo', amount: 10, closedAt: '2024-03-01' }],
+};
+
 const wrapperFor =
   (provider: MetricDataProvider) =>
   ({ children }: { children: ReactNode }) => (
@@ -124,6 +137,58 @@ describe('useMetricBuilder', () => {
 
     result.current.removeFilter(0);
     expect(onChange).toHaveBeenCalledWith({ sourceId: 'gym', filters: [] });
+  });
+
+  it('exposes date fields and window/range setters', async () => {
+    const onChange = vi.fn();
+    const { result } = renderBuilder(
+      createMockProvider([datedSeed]),
+      { sourceId: 'crm' },
+      onChange
+    );
+    await waitFor(() => expect(result.current.fields).toHaveLength(3));
+
+    expect(result.current.dateFields.map((f) => f.apiName)).toEqual(['closedAt']);
+    expect(result.current.window).toBeUndefined();
+    expect(result.current.range).toBeUndefined();
+
+    result.current.setWindow({ field: 'closedAt', granularity: 'weekly' });
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'crm',
+      window: { field: 'closedAt', granularity: 'weekly' },
+    });
+
+    result.current.setRange({ field: 'closedAt', lastDays: 30 });
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'crm',
+      range: { field: 'closedAt', lastDays: 30 },
+    });
+  });
+
+  it('clears window and range when set to undefined', async () => {
+    const onChange = vi.fn();
+    const { result } = renderBuilder(
+      createMockProvider([datedSeed]),
+      {
+        sourceId: 'crm',
+        window: { field: 'closedAt', granularity: 'weekly' },
+        range: { field: 'closedAt', lastDays: 30 },
+      },
+      onChange
+    );
+    await waitFor(() => expect(result.current.fields).toHaveLength(3));
+
+    result.current.setWindow(undefined);
+    expect(onChange).toHaveBeenLastCalledWith({
+      sourceId: 'crm',
+      range: { field: 'closedAt', lastDays: 30 },
+    });
+
+    result.current.setRange(undefined);
+    expect(onChange).toHaveBeenLastCalledWith({
+      sourceId: 'crm',
+      window: { field: 'closedAt', granularity: 'weekly' },
+    });
   });
 
   it('exposes handlers that emit transformed definitions', async () => {

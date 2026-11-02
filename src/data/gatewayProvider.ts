@@ -1,3 +1,4 @@
+import { computeSubjectSeries } from '../core/computeSubjectSeries';
 import { computeSubjectValues } from '../core/computeSubjectValues';
 import type { MetricDefinition } from '../core/metricDefinition';
 import type { MetricDataProvider } from '../core/provider';
@@ -65,14 +66,24 @@ export const createGatewayProvider = (
       return body.data;
     },
 
-    queryData: async (definition: MetricDefinition) => {
+    queryData: async (definition: MetricDefinition, asOf: number) => {
       if (!definition.sourceId) {
         return [];
       }
       const body = await request<Envelope<Array<Record<string, unknown>>>>(
         dataRequest(definition.sourceId)
       );
-      return computeSubjectValues(body.data, definition);
+      return computeSubjectValues(body.data, definition, asOf);
+    },
+
+    querySeries: async (definition: MetricDefinition, asOf: number) => {
+      if (!definition.sourceId) {
+        return [];
+      }
+      const body = await request<Envelope<Array<Record<string, unknown>>>>(
+        dataRequest(definition.sourceId)
+      );
+      return computeSubjectSeries(body.data, definition, asOf);
     },
   };
 };

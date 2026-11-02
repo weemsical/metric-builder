@@ -5,8 +5,10 @@ import {
   withAggregation,
   withFilter,
   withMeasureField,
+  withRange,
   withSource,
   withSubjectField,
+  withWindow,
   type Aggregation,
   type MetricDefinition,
 } from '../core/metricDefinition';
@@ -15,7 +17,9 @@ import type {
   Filter,
   FilterOperator,
   MetricSource,
+  Range,
   SourceField,
+  Window,
 } from '../core/types';
 import { useMetricDataProvider } from './metricBuilderContext';
 
@@ -35,6 +39,11 @@ export type UseMetricBuilder = {
   addFilter: (filter: Filter) => void;
   changeFilter: (index: number, filter: Filter) => void;
   removeFilter: (index: number) => void;
+  dateFields: SourceField[];
+  window?: Window;
+  range?: Range;
+  setWindow: (window: Window | undefined) => void;
+  setRange: (range: Range | undefined) => void;
 };
 
 type Loadable<T> = { status: 'loading' | 'error'; value: T } | { status: 'ready'; value: T };
@@ -100,5 +109,24 @@ export const useMetricBuilder = (
     changeFilter: (index, filter) =>
       onChange(updateFilter(definition, index, filter)),
     removeFilter: (index) => onChange(removeFilter(definition, index)),
+    dateFields: fields.filter((field) => field.type === 'date'),
+    window: definition.window,
+    range: definition.range,
+    setWindow: (window) => {
+      if (window) {
+        onChange(withWindow(definition, window));
+        return;
+      }
+      const { window: _removed, ...rest } = definition;
+      onChange(rest);
+    },
+    setRange: (range) => {
+      if (range) {
+        onChange(withRange(definition, range));
+        return;
+      }
+      const { range: _removed, ...rest } = definition;
+      onChange(rest);
+    },
   };
 };

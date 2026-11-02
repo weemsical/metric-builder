@@ -37,11 +37,13 @@ const describeBody = {
 const dataBody = {
   status: 'success',
   data: [
-    { traineeId: 'ana', reps: 10 },
-    { traineeId: 'ana', reps: 20 },
-    { traineeId: 'bo', reps: 5 },
+    { traineeId: 'ana', reps: 10, day: '2024-03-01T00:00:00Z' },
+    { traineeId: 'ana', reps: 20, day: '2024-03-01T00:00:00Z' },
+    { traineeId: 'bo', reps: 5, day: '2024-03-01T00:00:00Z' },
   ],
 };
+
+const asOf = Date.parse('2024-06-01T00:00:00Z');
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -97,11 +99,14 @@ describe('createGatewayProvider', () => {
       fetchImpl: impl,
     });
     expect(
-      await provider.queryData({
-        sourceId: 'gym',
-        measure: { field: 'reps', aggregation: 'sum' },
-        subjectField: 'traineeId',
-      })
+      await provider.queryData(
+        {
+          sourceId: 'gym',
+          measure: { field: 'reps', aggregation: 'sum' },
+          subjectField: 'traineeId',
+        },
+        asOf
+      )
     ).toEqual([
       { subject: 'ana', value: 30 },
       { subject: 'bo', value: 5 },
@@ -116,8 +121,33 @@ describe('createGatewayProvider', () => {
       organizationId: 'org-1',
       fetchImpl: impl,
     });
-    expect(await provider.queryData({})).toEqual([]);
+    expect(await provider.queryData({}, asOf)).toEqual([]);
     expect(calls).toHaveLength(0);
+  });
+
+  it('computes a series and returns empty without a source', async () => {
+    const { impl, calls } = fakeFetch(dataBody);
+    const provider = createGatewayProvider({
+      baseUrl: 'https://gw',
+      organizationId: 'org-1',
+      fetchImpl: impl,
+    });
+    expect(await provider.querySeries!({}, asOf)).toEqual([]);
+    expect(calls).toHaveLength(0);
+    expect(
+      await provider.querySeries!(
+        {
+          sourceId: 'gym',
+          measure: { aggregation: 'count' },
+          subjectField: 'traineeId',
+          window: { field: 'day', granularity: 'daily' },
+        },
+        asOf
+      )
+    ).toEqual([
+      { subject: 'ana', points: [{ bucket: '2024-03-01', value: 2 }] },
+      { subject: 'bo', points: [{ bucket: '2024-03-01', value: 1 }] },
+    ]);
   });
 
   it('throws when the gateway responds with an error status', async () => {

@@ -7,8 +7,10 @@ export {
   withAggregation,
   withFilter,
   withMeasureField,
+  withRange,
   withSource,
   withSubjectField,
+  withWindow,
   type Aggregation,
   type Measure,
   type MetricDefinition,
@@ -21,7 +23,9 @@ export {
 } from './evaluateFilterLogic';
 export { operatorsForFieldType } from './operators';
 export { toEpoch } from './toEpoch';
+export { bucketByWindow, enumerateBuckets } from './bucketByWindow';
 export { computeSubjectValues } from './computeSubjectValues';
+export { computeSubjectSeries } from './computeSubjectSeries';
 export type { MetricDataProvider } from './provider';
 export { createMockProvider, type MockSourceSeed } from './mockProvider';
 export {
@@ -34,8 +38,13 @@ export type {
   FieldType,
   Filter,
   FilterOperator,
+  Granularity,
   MetricSource,
+  Range,
+  SeriesPoint,
   SourceDescribe,
   SourceField,
+  SubjectSeries,
   SubjectValue,
+  Window,
 } from './types';

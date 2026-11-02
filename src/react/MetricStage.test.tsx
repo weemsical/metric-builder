@@ -14,9 +14,10 @@ const seed: MockSourceSeed = {
     fields: [
       { apiName: 'traineeId', label: 'Trainee', type: 'text', isPrimaryKey: false },
       { apiName: 'reps', label: 'Reps', type: 'number', isPrimaryKey: false },
+      { apiName: 'closedAt', label: 'Closed At', type: 'date', isPrimaryKey: false },
     ],
   },
-  rows: [{ traineeId: 'ana', reps: 10 }],
+  rows: [{ traineeId: 'ana', reps: 10, closedAt: '2024-03-01' }],
 };
 
 const renderStage = (
@@ -188,6 +189,24 @@ describe('MetricStage', () => {
       sourceId: 'gym',
       measure: { aggregation: 'count' },
       filters: [],
+    });
+  });
+
+  it('selects a trend window from the date fields', async () => {
+    const onChange = vi.fn();
+    renderStage(
+      createMockProvider([seed]),
+      { sourceId: 'gym', measure: { aggregation: 'count' } },
+      onChange
+    );
+    await userEvent.selectOptions(
+      await screen.findByLabelText('Window field'),
+      'closedAt'
+    );
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      measure: { aggregation: 'count' },
+      window: { field: 'closedAt', granularity: 'daily' },
     });
   });
 

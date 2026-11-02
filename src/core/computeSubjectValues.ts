@@ -1,11 +1,8 @@
-import { aggregate } from './aggregate';
 import { matchesFilter } from './applyFilters';
 import { evaluateFilterLogic } from './evaluateFilterLogic';
-import {
-  isMetricComplete,
-  type Aggregation,
-  type MetricDefinition,
-} from './metricDefinition';
+import { filterByRange } from './filterByRange';
+import { isMetricComplete, type MetricDefinition } from './metricDefinition';
+import { reduceValues } from './reduceValues';
 import type { Filter, SubjectValue } from './types';
 
 const filterRows = (
@@ -23,37 +20,20 @@ const filterRows = (
   });
 };
 
-const reduceValues = (
-  values: unknown[],
-  aggregation: Aggregation
-): number => {
-  if (aggregation === 'countDistinct') {
-    const distinct = new Set(
-      values
-        .filter((value) => value !== null && value !== undefined)
-        .map(String)
-    );
-    return distinct.size;
-  }
-
-  const numbers = values
-    .map((value) => Number(value))
-    .filter((value) => !Number.isNaN(value));
-  return aggregate(numbers, aggregation);
-};
-
 export const computeSubjectValues = (
   rows: Array<Record<string, unknown>>,
-  definition: MetricDefinition
+  definition: MetricDefinition,
+  asOf: number
 ): SubjectValue[] => {
   if (!isMetricComplete(definition)) {
     return [];
   }
 
-  const { measure, subjectField, filters, filterLogic } = definition;
+  const { measure, subjectField, filters, filterLogic, range } = definition;
   const groups = new Map<string, unknown[]>();
 
-  for (const row of filterRows(rows, filters, filterLogic)) {
+  const ranged = filterByRange(rows, range, asOf);
+  for (const row of filterRows(ranged, filters, filterLogic)) {
     const subject = row[subjectField as string];
     if (subject === null || subject === undefined) {
       continue;

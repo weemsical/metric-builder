@@ -5,6 +5,7 @@ import {
   emptyMetricDefinition,
   isMetricComplete,
   type MetricDefinition,
+  type SubjectSeries,
   type SubjectValue,
 } from '../core';
 import {
@@ -79,9 +80,12 @@ export const App = () => {
     emptyMetricDefinition()
   );
   const [leaderboard, setLeaderboard] = useState<SubjectValue[]>([]);
+  const [series, setSeries] = useState<SubjectSeries[]>([]);
 
   useEffect(() => {
-    provider.queryData(definition).then(setLeaderboard);
+    const asOf = Date.now();
+    provider.queryData(definition, asOf).then(setLeaderboard);
+    provider.querySeries?.(definition, asOf).then(setSeries);
   }, [definition]);
 
   const complete = isMetricComplete(definition);
@@ -132,6 +136,24 @@ export const App = () => {
               <p style={{ color: '#6b7280' }}>
                 Finish the definition to preview a ranking.
               </p>
+            )}
+
+            {definition.window && (
+              <>
+                <h2 style={{ fontSize: '1rem', marginTop: '1.5rem' }}>
+                  Trend ({definition.window.granularity})
+                </h2>
+                {series.map((row) => (
+                  <div key={row.subject} style={{ marginBottom: '0.5rem' }}>
+                    <strong>{row.subject}</strong>
+                    <div style={{ color: '#6b7280', fontSize: '0.85rem' }}>
+                      {row.points
+                        .map((point) => `${point.bucket}: ${point.value ?? '—'}`)
+                        .join('  ·  ')}
+                    </div>
+                  </div>
+                ))}
+              </>
             )}
 
             <h2 style={{ fontSize: '1rem', marginTop: '1.5rem' }}>State</h2>

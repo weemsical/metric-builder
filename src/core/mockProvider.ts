@@ -1,3 +1,4 @@
+import { computeSubjectSeries } from './computeSubjectSeries';
 import { computeSubjectValues } from './computeSubjectValues';
 import type { MetricDefinition } from './metricDefinition';
 import type { MetricDataProvider } from './provider';
@@ -25,11 +26,26 @@ export const createMockProvider = (
 
     describeSource: async (sourceId) => seedFor(sourceId).describe,
 
-    queryData: async (definition: MetricDefinition) => {
+    queryData: async (definition: MetricDefinition, asOf: number) => {
       if (!definition.sourceId) {
         return [];
       }
-      return computeSubjectValues(seedFor(definition.sourceId).rows, definition);
+      return computeSubjectValues(
+        seedFor(definition.sourceId).rows,
+        definition,
+        asOf
+      );
+    },
+
+    querySeries: async (definition: MetricDefinition, asOf: number) => {
+      if (!definition.sourceId) {
+        return [];
+      }
+      return computeSubjectSeries(
+        seedFor(definition.sourceId).rows,
+        definition,
+        asOf
+      );
     },
   };
 };

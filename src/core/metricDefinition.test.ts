@@ -7,11 +7,13 @@ import {
   withAggregation,
   withFilter,
   withMeasureField,
+  withRange,
   withSource,
   withSubjectField,
+  withWindow,
   type MetricDefinition,
 } from './metricDefinition';
-import type { Filter } from './types';
+import type { Filter, Range, Window } from './types';
 
 describe('emptyMetricDefinition', () => {
   it('starts with nothing selected', () => {
@@ -125,6 +127,25 @@ describe('filter helpers', () => {
     const def: MetricDefinition = { sourceId: 'crm' };
     expect(updateFilter(def, 0, a).filters).toEqual([]);
     expect(removeFilter(def, 0).filters).toEqual([]);
+  });
+});
+
+describe('window and range helpers', () => {
+  const window: Window = { field: 'closedAt', granularity: 'weekly' };
+  const range: Range = { field: 'closedAt', lastDays: 30 };
+
+  it('withWindow sets the window immutably', () => {
+    const def: MetricDefinition = { sourceId: 'crm' };
+    const next = withWindow(def, window);
+    expect(next.window).toEqual(window);
+    expect(def.window).toBeUndefined();
+  });
+
+  it('withRange sets the range immutably', () => {
+    const def: MetricDefinition = { sourceId: 'crm' };
+    const next = withRange(def, range);
+    expect(next.range).toEqual(range);
+    expect(def.range).toBeUndefined();
   });
 });
 

@@ -1,5 +1,6 @@
 import type { Aggregation, MetricDefinition } from '../core/metricDefinition';
 import { FilterRow } from './FilterRow';
+import { WindowControls } from './WindowControls';
 import { useMetricBuilder } from './useMetricBuilder';
 import './MetricStage.css';
 
@@ -145,6 +146,14 @@ export const MetricStage = ({ definition, onChange }: MetricStageProps) => {
               Add filter
             </button>
           </div>
+
+          <WindowControls
+            dateFields={builder.dateFields}
+            window={builder.window}
+            range={builder.range}
+            onWindowChange={builder.setWindow}
+            onRangeChange={builder.setRange}
+          />
         </>
       )}
     </div>
