@@ -151,6 +151,8 @@ export const App = () => {
                       <strong>{row.subject}</strong> — {row.value}
                       {rag &&
                         ` (${Math.round(rag.attainment * 100)}% · ${rag.status})`}
+                      {row.coordinates &&
+                        ` 📍 ${row.coordinates.lat}, ${row.coordinates.lng}`}
                     </li>
                   );
                 })}

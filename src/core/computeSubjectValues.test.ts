@@ -149,6 +149,42 @@ describe('computeSubjectValues', () => {
     ]);
   });
 
+  it('attaches the first valid coordinates per subject when requested', () => {
+    const sites = [
+      { region: 'north', lat: 'nope', lng: -74.1 },
+      { region: 'north', lat: 40.2, lng: -74.2 },
+      { region: 'south', lat: 30, lng: -80 },
+    ];
+    expect(
+      computeSubjectValues(
+        sites,
+        {
+          sourceId: 'geo',
+          measure: { aggregation: 'count' },
+          subjectField: 'region',
+          coordinates: { latField: 'lat', lngField: 'lng' },
+        },
+        asOf
+      )
+    ).toEqual([
+      { subject: 'north', value: 2, coordinates: { lat: 40.2, lng: -74.2 } },
+      { subject: 'south', value: 1, coordinates: { lat: 30, lng: -80 } },
+    ]);
+  });
+
+  it('never attaches coordinates when not requested', () => {
+    const result = computeSubjectValues(
+      [{ region: 'north', lat: 40.2, lng: -74.2 }],
+      {
+        sourceId: 'geo',
+        measure: { aggregation: 'count' },
+        subjectField: 'region',
+      },
+      asOf
+    );
+    expect(result[0]).not.toHaveProperty('coordinates');
+  });
+
   it('applies a rolling range anchored at asOf before aggregating', () => {
     const dated = [
       { owner: 'Jo', amount: 100, date: '2024-03-01T00:00:00Z' },

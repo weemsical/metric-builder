@@ -1,4 +1,5 @@
 import type {
+  CoordinateFields,
   Filter,
   Pacing,
   Range,
@@ -33,6 +34,7 @@ export type MetricDefinition = {
   thresholds?: Thresholds;
   pacing?: Pacing;
   rankMethod?: RankMethod;
+  coordinates?: CoordinateFields;
 };
 
 export const emptyMetricDefinition = (): MetricDefinition => ({});
@@ -123,6 +125,11 @@ export const withRankMethod = (
   definition: MetricDefinition,
   rankMethod: RankMethod
 ): MetricDefinition => ({ ...definition, rankMethod });
+
+export const withCoordinates = (
+  definition: MetricDefinition,
+  coordinates: CoordinateFields
+): MetricDefinition => ({ ...definition, coordinates });
 
 export const isMetricComplete = (definition: MetricDefinition): boolean => {
   if (!definition.sourceId || !definition.subjectField || !definition.measure) {

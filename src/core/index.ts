@@ -6,6 +6,7 @@ export {
   updateFilter,
   withAggregation,
   withFilter,
+  withCoordinates,
   withMeasureField,
   withPacing,
   withRange,
@@ -25,7 +26,7 @@ export {
   evaluateFilterLogic,
   type FilterLogicResult,
 } from './evaluateFilterLogic';
-export { operatorsForFieldType } from './operators';
+export { operatorsForFieldType, aggregationsForFieldType } from './operators';
 export { toEpoch } from './toEpoch';
 export { bucketByWindow, enumerateBuckets } from './bucketByWindow';
 export { computeSubjectValues } from './computeSubjectValues';
@@ -42,6 +43,8 @@ export {
   type SavedMetric,
 } from './store';
 export type {
+  CoordinateFields,
+  Coordinates,
   Direction,
   FieldType,
   Filter,

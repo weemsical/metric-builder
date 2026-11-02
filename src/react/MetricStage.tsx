@@ -1,4 +1,5 @@
 import type { Aggregation, MetricDefinition } from '../core/metricDefinition';
+import { aggregationsForFieldType } from '../core/operators';
 import type { RankMethod } from '../core/types';
 import { FilterRow } from './FilterRow';
 import { PacingSelect } from './PacingSelect';
@@ -24,6 +25,18 @@ const AGGREGATIONS: ReadonlyArray<{ value: Aggregation; label: string }> = [
 export const MetricStage = ({ definition, onChange }: MetricStageProps) => {
   const builder = useMetricBuilder(definition, onChange);
   const { measure } = definition;
+
+  const measureFieldType = builder.fields.find(
+    (field) => field.apiName === measure?.field
+  )?.type;
+  const allowedAggregations = measureFieldType
+    ? aggregationsForFieldType(measureFieldType)
+    : null;
+  const aggregationOptions = allowedAggregations
+    ? AGGREGATIONS.filter((option) =>
+        allowedAggregations.includes(option.value)
+      )
+    : AGGREGATIONS;
 
   if (builder.sourcesError) {
     return (
@@ -77,7 +90,7 @@ export const MetricStage = ({ definition, onChange }: MetricStageProps) => {
               <option value="" disabled>
                 Choose an aggregation…
               </option>
-              {AGGREGATIONS.map((option) => (
+              {aggregationOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>

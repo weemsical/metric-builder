@@ -1,5 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { operatorsForFieldType } from './operators';
+import { aggregationsForFieldType, operatorsForFieldType } from './operators';
+
+describe('aggregationsForFieldType', () => {
+  it('offers only count and countDistinct for geography', () => {
+    expect(aggregationsForFieldType('geography')).toEqual([
+      'count',
+      'countDistinct',
+    ]);
+  });
+
+  it('offers every aggregation for number', () => {
+    expect(aggregationsForFieldType('number')).toEqual([
+      'count',
+      'sum',
+      'avg',
+      'min',
+      'max',
+      'countDistinct',
+    ]);
+  });
+
+  it('offers every aggregation for other types', () => {
+    expect(aggregationsForFieldType('text')).toContain('sum');
+  });
+});
 
 describe('operatorsForFieldType', () => {
   it('offers equality and null checks for every type', () => {

@@ -26,9 +26,20 @@ export type SourceDescribe = {
   fields: SourceField[];
 };
 
+export type Coordinates = {
+  lat: number;
+  lng: number;
+};
+
+export type CoordinateFields = {
+  latField: string;
+  lngField: string;
+};
+
 export type SubjectValue = {
   subject: string;
   value: number;
+  coordinates?: Coordinates;
 };
 
 export type FilterOperator =

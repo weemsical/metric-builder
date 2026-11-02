@@ -15,6 +15,7 @@ const seed: MockSourceSeed = {
       { apiName: 'traineeId', label: 'Trainee', type: 'text', isPrimaryKey: false },
       { apiName: 'reps', label: 'Reps', type: 'number', isPrimaryKey: false },
       { apiName: 'closedAt', label: 'Closed At', type: 'date', isPrimaryKey: false },
+      { apiName: 'location', label: 'Location', type: 'geography', isPrimaryKey: false },
     ],
   },
   rows: [{ traineeId: 'ana', reps: 10, closedAt: '2024-03-01' }],
@@ -259,6 +260,17 @@ describe('MetricStage', () => {
       measure: { aggregation: 'count' },
       rankMethod: 'percentToGoal',
     });
+  });
+
+  it('restricts aggregations when the measure field is geography', async () => {
+    renderStage(createMockProvider([seed]), {
+      sourceId: 'gym',
+      measure: { aggregation: 'countDistinct', field: 'location' },
+    });
+    const agg = await screen.findByLabelText('How should we total it?');
+    expect(agg).toHaveTextContent('Count Distinct');
+    expect(agg).not.toHaveTextContent('Average');
+    expect(agg).not.toHaveTextContent('Sum');
   });
 
   it('renders empty selections when no measure is set yet', async () => {

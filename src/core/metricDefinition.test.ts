@@ -5,6 +5,7 @@ import {
   removeFilter,
   updateFilter,
   withAggregation,
+  withCoordinates,
   withFilter,
   withMeasureField,
   withPacing,
@@ -190,6 +191,13 @@ describe('target, thresholds, pacing, rank helpers', () => {
       'percentToGoal'
     );
     expect(def.rankMethod).toBeUndefined();
+  });
+
+  it('withCoordinates sets coordinate fields immutably', () => {
+    const def: MetricDefinition = { sourceId: 'geo' };
+    const next = withCoordinates(def, { latField: 'lat', lngField: 'lng' });
+    expect(next.coordinates).toEqual({ latField: 'lat', lngField: 'lng' });
+    expect(def.coordinates).toBeUndefined();
   });
 });
 

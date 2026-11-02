@@ -39,4 +39,21 @@ export const seeds: MockSourceSeed[] = [
       { ownerId: 'Lee', amount: 1500, stage: 'won' },
     ],
   },
+  {
+    source: { id: 'visits', name: 'Field Visits', enabled: true },
+    describe: {
+      type: 'visit',
+      fields: [
+        { apiName: 'territory', label: 'Territory', type: 'geography', isPrimaryKey: false },
+        { apiName: 'rep', label: 'Rep', type: 'text', isPrimaryKey: false },
+        { apiName: 'latitude', label: 'Latitude', type: 'number', isPrimaryKey: false },
+        { apiName: 'longitude', label: 'Longitude', type: 'number', isPrimaryKey: false },
+      ],
+    },
+    rows: [
+      { territory: 'North', rep: 'Ana', latitude: 44.98, longitude: -93.27 },
+      { territory: 'North', rep: 'Bo', latitude: 44.95, longitude: -93.1 },
+      { territory: 'South', rep: 'Cy', latitude: 29.76, longitude: -95.37 },
+    ],
+  },
 ];

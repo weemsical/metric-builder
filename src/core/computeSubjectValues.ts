@@ -3,7 +3,7 @@ import { evaluateFilterLogic } from './evaluateFilterLogic';
 import { filterByRange } from './filterByRange';
 import { isMetricComplete, type MetricDefinition } from './metricDefinition';
 import { reduceValues } from './reduceValues';
-import type { Filter, SubjectValue } from './types';
+import type { Coordinates, Filter, SubjectValue } from './types';
 
 const filterRows = (
   rows: Array<Record<string, unknown>>,
@@ -29,8 +29,10 @@ export const computeSubjectValues = (
     return [];
   }
 
-  const { measure, subjectField, filters, filterLogic, range } = definition;
+  const { measure, subjectField, filters, filterLogic, range, coordinates } =
+    definition;
   const groups = new Map<string, unknown[]>();
+  const coordsBySubject = new Map<string, Coordinates>();
 
   const ranged = filterByRange(rows, range, asOf);
   for (const row of filterRows(ranged, filters, filterLogic)) {
@@ -39,18 +41,31 @@ export const computeSubjectValues = (
       continue;
     }
 
-    const bucket = groups.get(String(subject)) ?? [];
-    groups.set(String(subject), bucket);
+    const key = String(subject);
+    const bucket = groups.get(key) ?? [];
+    groups.set(key, bucket);
 
     bucket.push(
       measure!.aggregation === 'count' ? 1 : row[measure!.field as string]
     );
+
+    if (coordinates && !coordsBySubject.has(key)) {
+      const lat = Number(row[coordinates.latField]);
+      const lng = Number(row[coordinates.lngField]);
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+        coordsBySubject.set(key, { lat, lng });
+      }
+    }
   }
 
   return [...groups.entries()]
-    .map(([subject, values]) => ({
-      subject,
-      value: reduceValues(values, measure!.aggregation),
-    }))
+    .map(([subject, values]) => {
+      const base: SubjectValue = {
+        subject,
+        value: reduceValues(values, measure!.aggregation),
+      };
+      const coords = coordsBySubject.get(subject);
+      return coords ? { ...base, coordinates: coords } : base;
+    })
     .sort((a, b) => b.value - a.value);
 };
