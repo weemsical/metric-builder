@@ -119,6 +119,23 @@ describe('isMetricComplete', () => {
     ).toBe(true);
   });
 
+  it('requires a field for countDistinct', () => {
+    expect(
+      isMetricComplete({
+        sourceId: 'src-1',
+        measure: { aggregation: 'countDistinct' },
+        subjectField: 'ownerId',
+      })
+    ).toBe(false);
+    expect(
+      isMetricComplete({
+        sourceId: 'src-1',
+        measure: { field: 'traineeId', aggregation: 'countDistinct' },
+        subjectField: 'ownerId',
+      })
+    ).toBe(true);
+  });
+
   it('is true with source, measure field, and subject', () => {
     expect(
       isMetricComplete({

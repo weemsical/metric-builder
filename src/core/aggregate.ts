@@ -14,5 +14,7 @@ export const aggregate = (values: number[], aggregation: Aggregation): number =>
       return values.length === 0 ? 0 : Math.min(...values);
     case 'max':
       return values.length === 0 ? 0 : Math.max(...values);
+    case 'countDistinct':
+      return new Set(values).size;
   }
 };

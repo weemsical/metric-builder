@@ -13,6 +13,7 @@ const AGGREGATIONS: ReadonlyArray<{ value: Aggregation; label: string }> = [
   { value: 'avg', label: 'Average' },
   { value: 'min', label: 'Minimum' },
   { value: 'max', label: 'Maximum' },
+  { value: 'countDistinct', label: 'Count Distinct' },
 ];
 
 export const MetricStage = ({ definition, onChange }: MetricStageProps) => {

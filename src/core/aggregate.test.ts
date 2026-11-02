@@ -32,4 +32,12 @@ describe('aggregate', () => {
   it('returns 0 counting an empty set', () => {
     expect(aggregate([], 'count')).toBe(0);
   });
+
+  it('counts distinct values', () => {
+    expect(aggregate([1, 1, 2], 'countDistinct')).toBe(2);
+  });
+
+  it('counts distinct in an empty set as 0', () => {
+    expect(aggregate([], 'countDistinct')).toBe(0);
+  });
 });

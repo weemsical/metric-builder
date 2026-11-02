@@ -14,6 +14,12 @@ export { aggregate } from './aggregate';
 export { computeSubjectValues } from './computeSubjectValues';
 export type { MetricDataProvider } from './provider';
 export { createMockProvider, type MockSourceSeed } from './mockProvider';
+export {
+  createMemoryStore,
+  type MemoryStoreOptions,
+  type MetricStore,
+  type SavedMetric,
+} from './store';
 export type {
   FieldType,
   MetricSource,

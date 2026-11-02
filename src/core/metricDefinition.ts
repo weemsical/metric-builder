@@ -1,4 +1,10 @@
-export type Aggregation = 'count' | 'sum' | 'avg' | 'min' | 'max';
+export type Aggregation =
+  | 'count'
+  | 'sum'
+  | 'avg'
+  | 'min'
+  | 'max'
+  | 'countDistinct';
 
 export type Measure = {
   field?: string;

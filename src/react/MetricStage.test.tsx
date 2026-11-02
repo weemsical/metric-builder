@@ -117,6 +117,27 @@ describe('MetricStage', () => {
     expect(screen.queryByLabelText('Field')).not.toBeInTheDocument();
   });
 
+  it('offers and selects a Count Distinct aggregation', async () => {
+    const onChange = vi.fn();
+    renderStage(
+      createMockProvider([seed]),
+      { sourceId: 'gym', measure: { aggregation: 'sum' } },
+      onChange
+    );
+    expect(
+      await screen.findByRole('option', { name: 'Count Distinct' })
+    ).toBeInTheDocument();
+
+    await userEvent.selectOptions(
+      screen.getByLabelText('Aggregation'),
+      'countDistinct'
+    );
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      measure: { aggregation: 'countDistinct' },
+    });
+  });
+
   it('renders empty selections when no measure is set yet', async () => {
     renderStage(createMockProvider([seed]), { sourceId: 'gym' });
     expect(await screen.findByLabelText('Aggregation')).toHaveValue('');

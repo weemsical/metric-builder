@@ -41,4 +41,24 @@ describe('computeSubjectValues', () => {
       { subject: 'cy', value: 1 },
     ]);
   });
+
+  it('counts distinct non-null field values per subject', () => {
+    const sessions = [
+      { trainerId: 't1', traineeId: 'ana' },
+      { trainerId: 't1', traineeId: 'ana' },
+      { trainerId: 't1', traineeId: 'bo' },
+      { trainerId: 't2', traineeId: 'cy' },
+      { trainerId: 't2', traineeId: null },
+    ];
+    expect(
+      computeSubjectValues(sessions, {
+        sourceId: 'gym',
+        measure: { field: 'traineeId', aggregation: 'countDistinct' },
+        subjectField: 'trainerId',
+      })
+    ).toEqual([
+      { subject: 't1', value: 2 },
+      { subject: 't2', value: 1 },
+    ]);
+  });
 });

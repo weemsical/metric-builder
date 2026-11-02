@@ -1,6 +1,29 @@
 import { aggregate } from './aggregate';
-import { isMetricComplete, type MetricDefinition } from './metricDefinition';
+import {
+  isMetricComplete,
+  type Aggregation,
+  type MetricDefinition,
+} from './metricDefinition';
 import type { SubjectValue } from './types';
+
+const reduceValues = (
+  values: unknown[],
+  aggregation: Aggregation
+): number => {
+  if (aggregation === 'countDistinct') {
+    const distinct = new Set(
+      values
+        .filter((value) => value !== null && value !== undefined)
+        .map(String)
+    );
+    return distinct.size;
+  }
+
+  const numbers = values
+    .map((value) => Number(value))
+    .filter((value) => !Number.isNaN(value));
+  return aggregate(numbers, aggregation);
+};
 
 export const computeSubjectValues = (
   rows: Array<Record<string, unknown>>,
@@ -11,7 +34,7 @@ export const computeSubjectValues = (
   }
 
   const { measure, subjectField } = definition;
-  const groups = new Map<string, number[]>();
+  const groups = new Map<string, unknown[]>();
 
   for (const row of rows) {
     const subject = row[subjectField as string];
@@ -22,20 +45,15 @@ export const computeSubjectValues = (
     const bucket = groups.get(String(subject)) ?? [];
     groups.set(String(subject), bucket);
 
-    if (measure!.aggregation === 'count') {
-      bucket.push(1);
-    } else {
-      const value = Number(row[measure!.field as string]);
-      if (!Number.isNaN(value)) {
-        bucket.push(value);
-      }
-    }
+    bucket.push(
+      measure!.aggregation === 'count' ? 1 : row[measure!.field as string]
+    );
   }
 
   return [...groups.entries()]
     .map(([subject, values]) => ({
       subject,
-      value: aggregate(values, measure!.aggregation),
+      value: reduceValues(values, measure!.aggregation),
     }))
     .sort((a, b) => b.value - a.value);
 };
