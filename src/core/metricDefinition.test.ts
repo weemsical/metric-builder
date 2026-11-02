@@ -7,13 +7,24 @@ import {
   withAggregation,
   withFilter,
   withMeasureField,
+  withPacing,
   withRange,
+  withRankMethod,
   withSource,
   withSubjectField,
+  withTarget,
+  withThresholds,
   withWindow,
   type MetricDefinition,
 } from './metricDefinition';
-import type { Filter, Range, Window } from './types';
+import type {
+  Filter,
+  Pacing,
+  Range,
+  Target,
+  Thresholds,
+  Window,
+} from './types';
 
 describe('emptyMetricDefinition', () => {
   it('starts with nothing selected', () => {
@@ -146,6 +157,39 @@ describe('window and range helpers', () => {
     const next = withRange(def, range);
     expect(next.range).toEqual(range);
     expect(def.range).toBeUndefined();
+  });
+});
+
+describe('target, thresholds, pacing, rank helpers', () => {
+  const target: Target = { value: 100, direction: 'higherIsBetter' };
+  const thresholds: Thresholds = { amber: 0.7, green: 0.9 };
+  const pacing: Pacing = { strategy: 'rampUp', excludeWeekends: true };
+
+  it('withTarget sets the target immutably', () => {
+    const def: MetricDefinition = { sourceId: 'crm' };
+    const next = withTarget(def, target);
+    expect(next.target).toEqual(target);
+    expect(def.target).toBeUndefined();
+  });
+
+  it('withThresholds sets thresholds immutably', () => {
+    const def: MetricDefinition = { sourceId: 'crm' };
+    expect(withThresholds(def, thresholds).thresholds).toEqual(thresholds);
+    expect(def.thresholds).toBeUndefined();
+  });
+
+  it('withPacing sets pacing immutably', () => {
+    const def: MetricDefinition = { sourceId: 'crm' };
+    expect(withPacing(def, pacing).pacing).toEqual(pacing);
+    expect(def.pacing).toBeUndefined();
+  });
+
+  it('withRankMethod sets the rank method immutably', () => {
+    const def: MetricDefinition = { sourceId: 'crm' };
+    expect(withRankMethod(def, 'percentToGoal').rankMethod).toBe(
+      'percentToGoal'
+    );
+    expect(def.rankMethod).toBeUndefined();
   });
 });
 

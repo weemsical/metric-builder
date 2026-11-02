@@ -78,3 +78,28 @@ export type SubjectSeries = {
   subject: string;
   points: SeriesPoint[];
 };
+
+export type Direction = 'higherIsBetter' | 'lowerIsBetter';
+
+export type Target = {
+  value?: number;
+  min?: number;
+  max?: number;
+  direction: Direction;
+};
+
+export type Thresholds = {
+  amber: number;
+  green: number;
+};
+
+export type RagStatus = 'red' | 'amber' | 'green';
+
+export type PacingStrategy = 'steady' | 'rampUp' | 'bigFinish';
+
+export type Pacing = {
+  strategy: PacingStrategy;
+  excludeWeekends?: boolean;
+};
+
+export type RankMethod = 'score' | 'percentToGoal';

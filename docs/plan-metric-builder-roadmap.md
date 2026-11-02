@@ -1,10 +1,28 @@
 # Implementation Plan — metric-builder roadmap
 
 **Source PRD:** `docs/prd-metric-builder.md`
-**Last updated:** 2026-08-31
+**Last updated:** 2026-11-02
 **Method:** strict TDD (red → green → refactor) per global workflow; **100% coverage enforced**
 (`vitest --coverage`). Every phase is a vertical, tracer-bullet slice touching **core → compute →
 provider → react**, shippable on its own, additive and backward-compatible.
+
+## L11 parity (decided 2026-11-02)
+
+The package is a pluggable library that must reach **concepts + UX parity** with L11's current metric
+builder (`~/Desktop/l11`, `clients/components/shared/metric-builder/metric-builder.jsx`; model
+`clients/types/metric.d.ts`), while keeping the **domain-agnostic model** (current names:
+`sourceId` / `measure{field,aggregation}` / `subjectField` / `window`+`range` /
+`filters[]{field,operator,value}` / `filterLogic`). Do NOT rename to L11's `Metric` shape — it serves
+4 products, not just the L11-like one.
+
+- **Fold UX into each phase** — no separate UX slice. When a phase reworks `MetricStage`, relabel/
+  reorder the sections it touches to mirror L11's flow + conversational labels ("What type of record
+  is this?", "What Date should we use?"). R3 relabels measure/subject/timeframe; R5 adds formula.
+- **Add the missing Advanced filter logic control** (`filterLogic` is in the model but has no UI yet)
+  during the next `MetricStage` rework (R3).
+- **Name stays in the store** — do not add name/description/abbreviation to `MetricDefinition`; naming
+  is a `SavedMetric` (R0 store) concern.
+- **Excluded** (per PRD): cross-object filters, waterline, points, competitions, integrations.
 
 ## Conventions for every phase
 
@@ -273,11 +291,21 @@ or a single value).
 - **react:** `TargetInput.tsx`, `PacingSelect.tsx` (+ tests); `useMetricBuilder` selectors;
   `MetricStage` shows target/range + thresholds + pacing + rank method; hosts render RAG chips and
   the ranked leaderboard.
+- **react (L11 UX parity, folded in):** while reworking `MetricStage`, relabel/reorder the sections
+  this phase touches toward L11's flow + conversational labels (measure/subject/timeframe), and add
+  the **Advanced filter logic** control that binds `filterLogic` (model supports it; no UI yet).
+  Mirror L11's `goal-threshold-select`, `scoring-method-select`, `pacing-select` structure. Keep the
+  domain-agnostic model — no L11 field renames; name stays in the store.
 
 ### Resolved decisions
 - **D11** Pacing period = current `window` period (granularity + timeZone); host passes `asOf`
   (`core` stays pure/deterministic); `excludeWeekends` counts business days; no window ⇒ pacing inert
   unless the target carries a period. Rank/classify use the period-total (D8).
+- **D11a (verified against L11 `Pace.cls` + `pacing-select.jsx`)** Expected pace formula:
+  `expected = goal × elapsedFraction^(1 + paceFactor)`, where `elapsedFraction = daysElapsed/totalDays`
+  (business days when `excludeWeekends`). Strategy → paceFactor: `steady = 0`, `rampUp = 1.3`,
+  `bigFinish = 5` (so exponents 1 / 2.3 / 6). `expectedPace(goal, elapsedFraction, strategy)` is pure;
+  a separate `elapsedFraction(start, end, asOf, excludeWeekends)` helper derives the fraction.
 
 ### Checkpoint
 `classify` covers higher/lower-is-better, range targets, all three statuses, no-target;

@@ -1,5 +1,8 @@
 import type { Aggregation, MetricDefinition } from '../core/metricDefinition';
+import type { RankMethod } from '../core/types';
 import { FilterRow } from './FilterRow';
+import { PacingSelect } from './PacingSelect';
+import { TargetInput } from './TargetInput';
 import { WindowControls } from './WindowControls';
 import { useMetricBuilder } from './useMetricBuilder';
 import './MetricStage.css';
@@ -35,7 +38,7 @@ export const MetricStage = ({ definition, onChange }: MetricStageProps) => {
   return (
     <div className="metric-stage">
       <label className="metric-stage__field">
-        <span className="metric-stage__label">Source</span>
+        <span className="metric-stage__label">What are you measuring?</span>
         <select
           className="metric-stage__select"
           value={definition.sourceId ?? ''}
@@ -63,7 +66,7 @@ export const MetricStage = ({ definition, onChange }: MetricStageProps) => {
       ) : (
         <>
           <label className="metric-stage__field">
-            <span className="metric-stage__label">Aggregation</span>
+            <span className="metric-stage__label">How should we total it?</span>
             <select
               className="metric-stage__select"
               value={measure?.aggregation ?? ''}
@@ -84,7 +87,7 @@ export const MetricStage = ({ definition, onChange }: MetricStageProps) => {
 
           {measure?.aggregation !== 'count' && (
             <label className="metric-stage__field">
-              <span className="metric-stage__label">Field</span>
+              <span className="metric-stage__label">Which field?</span>
               <select
                 className="metric-stage__select"
                 value={measure?.field ?? ''}
@@ -103,7 +106,7 @@ export const MetricStage = ({ definition, onChange }: MetricStageProps) => {
           )}
 
           <label className="metric-stage__field">
-            <span className="metric-stage__label">Subject</span>
+            <span className="metric-stage__label">Group results by</span>
             <select
               className="metric-stage__select"
               value={definition.subjectField ?? ''}
@@ -145,6 +148,16 @@ export const MetricStage = ({ definition, onChange }: MetricStageProps) => {
             >
               Add filter
             </button>
+
+            <label className="metric-stage__field">
+              <span className="metric-stage__label">Advanced filter logic</span>
+              <input
+                className="metric-stage__select"
+                placeholder="e.g. 1 AND (2 OR 3)"
+                value={builder.filterLogic ?? ''}
+                onChange={(event) => builder.setFilterLogic(event.target.value)}
+              />
+            </label>
           </div>
 
           <WindowControls
@@ -154,6 +167,32 @@ export const MetricStage = ({ definition, onChange }: MetricStageProps) => {
             onWindowChange={builder.setWindow}
             onRangeChange={builder.setRange}
           />
+
+          <TargetInput
+            target={builder.target}
+            thresholds={builder.thresholds}
+            onTargetChange={builder.setTarget}
+            onThresholdsChange={builder.setThresholds}
+          />
+
+          <PacingSelect
+            pacing={builder.pacing}
+            onPacingChange={builder.setPacing}
+          />
+
+          <label className="metric-stage__field">
+            <span className="metric-stage__label">Rank by</span>
+            <select
+              className="metric-stage__select"
+              value={builder.rankMethod ?? 'score'}
+              onChange={(event) =>
+                builder.setRankMethod(event.target.value as RankMethod)
+              }
+            >
+              <option value="score">Score</option>
+              <option value="percentToGoal">Percent to goal</option>
+            </select>
+          </label>
         </>
       )}
     </div>

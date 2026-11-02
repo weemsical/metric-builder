@@ -25,7 +25,7 @@ export const WindowControls = ({
 }: WindowControlsProps) => (
   <div className="metric-stage__window">
     <label className="metric-stage__field">
-      <span className="metric-stage__label">Window field</span>
+      <span className="metric-stage__label">Trend over which date?</span>
       <select
         className="metric-stage__select"
         value={window?.field ?? ''}
@@ -51,7 +51,7 @@ export const WindowControls = ({
 
     {window && (
       <label className="metric-stage__field">
-        <span className="metric-stage__label">Granularity</span>
+        <span className="metric-stage__label">Timeframe</span>
         <select
           className="metric-stage__select"
           value={window.granularity}

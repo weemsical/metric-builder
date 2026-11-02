@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { createMockProvider, type MockSourceSeed } from '../core/mockProvider';
@@ -55,7 +55,7 @@ describe('MetricStage', () => {
     renderStage(createMockProvider([seed]), {}, onChange);
     await screen.findByRole('option', { name: 'Gym Sessions' });
     await userEvent.selectOptions(
-      screen.getByLabelText('Source'),
+      screen.getByLabelText('What are you measuring?'),
       'gym'
     );
     expect(onChange).toHaveBeenCalledWith({ sourceId: 'gym' });
@@ -88,11 +88,11 @@ describe('MetricStage', () => {
       { sourceId: 'gym', measure: { aggregation: 'sum' } },
       onChange
     );
-    await screen.findByLabelText('Field');
+    await screen.findByLabelText('Which field?');
 
-    await userEvent.selectOptions(screen.getByLabelText('Aggregation'), 'avg');
-    await userEvent.selectOptions(screen.getByLabelText('Field'), 'reps');
-    await userEvent.selectOptions(screen.getByLabelText('Subject'), 'traineeId');
+    await userEvent.selectOptions(screen.getByLabelText('How should we total it?'), 'avg');
+    await userEvent.selectOptions(screen.getByLabelText('Which field?'), 'reps');
+    await userEvent.selectOptions(screen.getByLabelText('Group results by'), 'traineeId');
 
     expect(onChange).toHaveBeenCalledWith({
       sourceId: 'gym',
@@ -114,8 +114,8 @@ describe('MetricStage', () => {
       sourceId: 'gym',
       measure: { aggregation: 'count' },
     });
-    await screen.findByLabelText('Subject');
-    expect(screen.queryByLabelText('Field')).not.toBeInTheDocument();
+    await screen.findByLabelText('Group results by');
+    expect(screen.queryByLabelText('Which field?')).not.toBeInTheDocument();
   });
 
   it('offers and selects a Count Distinct aggregation', async () => {
@@ -130,7 +130,7 @@ describe('MetricStage', () => {
     ).toBeInTheDocument();
 
     await userEvent.selectOptions(
-      screen.getByLabelText('Aggregation'),
+      screen.getByLabelText('How should we total it?'),
       'countDistinct'
     );
     expect(onChange).toHaveBeenCalledWith({
@@ -146,7 +146,7 @@ describe('MetricStage', () => {
       { sourceId: 'gym', measure: { aggregation: 'count' } },
       onChange
     );
-    await screen.findByLabelText('Subject');
+    await screen.findByLabelText('Group results by');
     await userEvent.click(screen.getByRole('button', { name: /add filter/i }));
     expect(onChange).toHaveBeenCalledWith({
       sourceId: 'gym',
@@ -200,7 +200,7 @@ describe('MetricStage', () => {
       onChange
     );
     await userEvent.selectOptions(
-      await screen.findByLabelText('Window field'),
+      await screen.findByLabelText('Trend over which date?'),
       'closedAt'
     );
     expect(onChange).toHaveBeenCalledWith({
@@ -210,10 +210,61 @@ describe('MetricStage', () => {
     });
   });
 
+  it('edits advanced filter logic', async () => {
+    const onChange = vi.fn();
+    renderStage(
+      createMockProvider([seed]),
+      { sourceId: 'gym', measure: { aggregation: 'count' } },
+      onChange
+    );
+    fireEvent.change(await screen.findByLabelText('Advanced filter logic'), {
+      target: { value: '1 AND 2' },
+    });
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      measure: { aggregation: 'count' },
+      filterLogic: '1 AND 2',
+    });
+  });
+
+  it('sets a goal, pacing, and rank method', async () => {
+    const onChange = vi.fn();
+    renderStage(
+      createMockProvider([seed]),
+      { sourceId: 'gym', measure: { aggregation: 'count' } },
+      onChange
+    );
+    fireEvent.change(await screen.findByLabelText('Goal value'), {
+      target: { value: '100' },
+    });
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      measure: { aggregation: 'count' },
+      target: { value: 100, direction: 'higherIsBetter' },
+    });
+
+    await userEvent.selectOptions(screen.getByLabelText('Pacing'), 'steady');
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      measure: { aggregation: 'count' },
+      pacing: { strategy: 'steady' },
+    });
+
+    await userEvent.selectOptions(
+      screen.getByLabelText('Rank by'),
+      'percentToGoal'
+    );
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      measure: { aggregation: 'count' },
+      rankMethod: 'percentToGoal',
+    });
+  });
+
   it('renders empty selections when no measure is set yet', async () => {
     renderStage(createMockProvider([seed]), { sourceId: 'gym' });
-    expect(await screen.findByLabelText('Aggregation')).toHaveValue('');
-    expect(screen.getByLabelText('Field')).toHaveValue('');
-    expect(screen.getByLabelText('Subject')).toHaveValue('');
+    expect(await screen.findByLabelText('How should we total it?')).toHaveValue('');
+    expect(screen.getByLabelText('Which field?')).toHaveValue('');
+    expect(screen.getByLabelText('Group results by')).toHaveValue('');
   });
 });

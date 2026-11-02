@@ -1,4 +1,12 @@
-import type { Filter, Range, Window } from './types';
+import type {
+  Filter,
+  Pacing,
+  Range,
+  RankMethod,
+  Target,
+  Thresholds,
+  Window,
+} from './types';
 
 export type Aggregation =
   | 'count'
@@ -21,6 +29,10 @@ export type MetricDefinition = {
   filterLogic?: string;
   window?: Window;
   range?: Range;
+  target?: Target;
+  thresholds?: Thresholds;
+  pacing?: Pacing;
+  rankMethod?: RankMethod;
 };
 
 export const emptyMetricDefinition = (): MetricDefinition => ({});
@@ -91,6 +103,26 @@ export const withRange = (
   definition: MetricDefinition,
   range: Range
 ): MetricDefinition => ({ ...definition, range });
+
+export const withTarget = (
+  definition: MetricDefinition,
+  target: Target
+): MetricDefinition => ({ ...definition, target });
+
+export const withThresholds = (
+  definition: MetricDefinition,
+  thresholds: Thresholds
+): MetricDefinition => ({ ...definition, thresholds });
+
+export const withPacing = (
+  definition: MetricDefinition,
+  pacing: Pacing
+): MetricDefinition => ({ ...definition, pacing });
+
+export const withRankMethod = (
+  definition: MetricDefinition,
+  rankMethod: RankMethod
+): MetricDefinition => ({ ...definition, rankMethod });
 
 export const isMetricComplete = (definition: MetricDefinition): boolean => {
   if (!definition.sourceId || !definition.subjectField || !definition.measure) {

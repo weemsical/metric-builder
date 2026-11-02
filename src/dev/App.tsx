@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
+  classify,
   createMemoryStore,
   createMockProvider,
   emptyMetricDefinition,
   isMetricComplete,
+  rankSubjects,
   type MetricDefinition,
   type SubjectSeries,
   type SubjectValue,
@@ -126,11 +128,32 @@ export const App = () => {
             <h2 style={{ fontSize: '1rem' }}>Leaderboard</h2>
             {complete ? (
               <ol style={{ paddingLeft: '1.25rem' }}>
-                {leaderboard.map((row) => (
-                  <li key={row.subject}>
-                    <strong>{row.subject}</strong> — {row.value}
-                  </li>
-                ))}
+                {rankSubjects(
+                  leaderboard,
+                  definition.rankMethod,
+                  definition.target
+                ).map((row) => {
+                  const rag = classify(
+                    row.value,
+                    definition.target,
+                    definition.thresholds
+                  );
+                  const color =
+                    rag?.status === 'green'
+                      ? '#16a34a'
+                      : rag?.status === 'amber'
+                        ? '#d97706'
+                        : rag?.status === 'red'
+                          ? '#dc2626'
+                          : '#111827';
+                  return (
+                    <li key={row.subject} style={{ color }}>
+                      <strong>{row.subject}</strong> — {row.value}
+                      {rag &&
+                        ` (${Math.round(rag.attainment * 100)}% · ${rag.status})`}
+                    </li>
+                  );
+                })}
               </ol>
             ) : (
               <p style={{ color: '#6b7280' }}>

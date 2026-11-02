@@ -40,7 +40,7 @@ describe('WindowControls', () => {
   it('emits a window with a default granularity when a field is picked', async () => {
     const { onWindowChange } = renderControls({});
     await userEvent.selectOptions(
-      screen.getByLabelText('Window field'),
+      screen.getByLabelText('Trend over which date?'),
       'closedAt'
     );
     expect(onWindowChange).toHaveBeenCalledWith({
@@ -54,7 +54,7 @@ describe('WindowControls', () => {
       window: { field: 'closedAt', granularity: 'daily' },
     });
     await userEvent.selectOptions(
-      screen.getByLabelText('Granularity'),
+      screen.getByLabelText('Timeframe'),
       'weekly'
     );
     expect(onWindowChange).toHaveBeenCalledWith({
@@ -67,7 +67,7 @@ describe('WindowControls', () => {
     const { onWindowChange } = renderControls({
       window: { field: 'closedAt', granularity: 'daily' },
     });
-    await userEvent.selectOptions(screen.getByLabelText('Window field'), '');
+    await userEvent.selectOptions(screen.getByLabelText('Trend over which date?'), '');
     expect(onWindowChange).toHaveBeenCalledWith(undefined);
   });
 

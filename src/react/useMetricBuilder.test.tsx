@@ -191,6 +191,107 @@ describe('useMetricBuilder', () => {
     });
   });
 
+  it('exposes filterLogic and a setter that clears when blank', async () => {
+    const onChange = vi.fn();
+    const { result } = renderBuilder(
+      createMockProvider([seed]),
+      { sourceId: 'gym', filterLogic: '1 AND 2' },
+      onChange
+    );
+    await waitFor(() => expect(result.current.sourcesLoading).toBe(false));
+
+    expect(result.current.filterLogic).toBe('1 AND 2');
+    result.current.setFilterLogic('1 OR 2');
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      filterLogic: '1 OR 2',
+    });
+    result.current.setFilterLogic('');
+    expect(onChange).toHaveBeenLastCalledWith({ sourceId: 'gym' });
+  });
+
+  it('exposes target/thresholds/pacing/rankMethod setters', async () => {
+    const onChange = vi.fn();
+    const { result } = renderBuilder(
+      createMockProvider([seed]),
+      { sourceId: 'gym' },
+      onChange
+    );
+    await waitFor(() => expect(result.current.sourcesLoading).toBe(false));
+
+    result.current.setTarget({ value: 100, direction: 'higherIsBetter' });
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      target: { value: 100, direction: 'higherIsBetter' },
+    });
+
+    result.current.setThresholds({ amber: 0.7, green: 0.9 });
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      thresholds: { amber: 0.7, green: 0.9 },
+    });
+
+    result.current.setPacing({ strategy: 'steady' });
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      pacing: { strategy: 'steady' },
+    });
+
+    result.current.setRankMethod('percentToGoal');
+    expect(onChange).toHaveBeenCalledWith({
+      sourceId: 'gym',
+      rankMethod: 'percentToGoal',
+    });
+  });
+
+  it('clears target/thresholds/pacing/rankMethod when set to undefined', async () => {
+    const onChange = vi.fn();
+    const { result } = renderBuilder(
+      createMockProvider([seed]),
+      {
+        sourceId: 'gym',
+        target: { value: 100, direction: 'higherIsBetter' },
+        thresholds: { amber: 0.7, green: 0.9 },
+        pacing: { strategy: 'steady' },
+        rankMethod: 'percentToGoal',
+      },
+      onChange
+    );
+    await waitFor(() => expect(result.current.sourcesLoading).toBe(false));
+
+    result.current.setTarget(undefined);
+    expect(onChange).toHaveBeenLastCalledWith({
+      sourceId: 'gym',
+      thresholds: { amber: 0.7, green: 0.9 },
+      pacing: { strategy: 'steady' },
+      rankMethod: 'percentToGoal',
+    });
+
+    result.current.setThresholds(undefined);
+    expect(onChange).toHaveBeenLastCalledWith({
+      sourceId: 'gym',
+      target: { value: 100, direction: 'higherIsBetter' },
+      pacing: { strategy: 'steady' },
+      rankMethod: 'percentToGoal',
+    });
+
+    result.current.setPacing(undefined);
+    expect(onChange).toHaveBeenLastCalledWith({
+      sourceId: 'gym',
+      target: { value: 100, direction: 'higherIsBetter' },
+      thresholds: { amber: 0.7, green: 0.9 },
+      rankMethod: 'percentToGoal',
+    });
+
+    result.current.setRankMethod(undefined);
+    expect(onChange).toHaveBeenLastCalledWith({
+      sourceId: 'gym',
+      target: { value: 100, direction: 'higherIsBetter' },
+      thresholds: { amber: 0.7, green: 0.9 },
+      pacing: { strategy: 'steady' },
+    });
+  });
+
   it('exposes handlers that emit transformed definitions', async () => {
     const onChange = vi.fn();
     const { result } = renderBuilder(
