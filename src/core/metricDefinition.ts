@@ -1,6 +1,7 @@
 import type {
   CoordinateFields,
   Filter,
+  FormulaOp,
   Pacing,
   Range,
   RankMethod,
@@ -8,6 +9,11 @@ import type {
   Thresholds,
   Window,
 } from './types';
+
+export type Formula = {
+  op: FormulaOp;
+  components: MetricDefinition[];
+};
 
 export type Aggregation =
   | 'count'
@@ -35,6 +41,7 @@ export type MetricDefinition = {
   pacing?: Pacing;
   rankMethod?: RankMethod;
   coordinates?: CoordinateFields;
+  formula?: Formula;
 };
 
 export const emptyMetricDefinition = (): MetricDefinition => ({});
@@ -131,7 +138,41 @@ export const withCoordinates = (
   coordinates: CoordinateFields
 ): MetricDefinition => ({ ...definition, coordinates });
 
+export const withFormula = (
+  definition: MetricDefinition,
+  formula: Formula
+): MetricDefinition => ({ ...definition, formula });
+
+export const withComponent = (
+  definition: MetricDefinition,
+  component: MetricDefinition
+): MetricDefinition => ({
+  ...definition,
+  formula: {
+    op: definition.formula?.op ?? 'divide',
+    components: [...(definition.formula?.components ?? []), component],
+  },
+});
+
+export const removeComponent = (
+  definition: MetricDefinition,
+  index: number
+): MetricDefinition => ({
+  ...definition,
+  formula: {
+    op: definition.formula?.op ?? 'divide',
+    components: (definition.formula?.components ?? []).filter(
+      (_, i) => i !== index
+    ),
+  },
+});
+
 export const isMetricComplete = (definition: MetricDefinition): boolean => {
+  if (definition.formula) {
+    const { components } = definition.formula;
+    return components.length > 0 && components.every(isMetricComplete);
+  }
+
   if (!definition.sourceId || !definition.subjectField || !definition.measure) {
     return false;
   }

@@ -1,3 +1,4 @@
+import { computeFormula } from './computeFormula';
 import { computeSubjectSeries } from './computeSubjectSeries';
 import { computeSubjectValues } from './computeSubjectValues';
 import type { MetricDefinition } from './metricDefinition';
@@ -27,6 +28,18 @@ export const createMockProvider = (
     describeSource: async (sourceId) => seedFor(sourceId).describe,
 
     queryData: async (definition: MetricDefinition, asOf: number) => {
+      if (definition.formula) {
+        const results = definition.formula.components.map((component) =>
+          component.sourceId
+            ? computeSubjectValues(
+                seedFor(component.sourceId).rows,
+                component,
+                asOf
+              )
+            : []
+        );
+        return computeFormula(results, definition.formula.op);
+      }
       if (!definition.sourceId) {
         return [];
       }

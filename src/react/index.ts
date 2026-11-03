@@ -11,3 +11,4 @@ export { FilterRow, type FilterRowProps } from './FilterRow';
 export { WindowControls, type WindowControlsProps } from './WindowControls';
 export { TargetInput, type TargetInputProps } from './TargetInput';
 export { PacingSelect, type PacingSelectProps } from './PacingSelect';
+export { FormulaBuilder, type FormulaBuilderProps } from './FormulaBuilder';

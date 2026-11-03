@@ -114,6 +114,70 @@ describe('createGatewayProvider', () => {
     expect(calls[0].url).toBe('https://gw/integrations/data?instanceId=gym');
   });
 
+  it('computes a formula metric by combining fetched components', async () => {
+    const { impl, calls } = fakeFetch(dataBody);
+    const provider = createGatewayProvider({
+      baseUrl: 'https://gw',
+      organizationId: 'org-1',
+      fetchImpl: impl,
+    });
+    const rows = await provider.queryData(
+      {
+        formula: {
+          op: 'divide',
+          components: [
+            {
+              sourceId: 'gym',
+              measure: { field: 'reps', aggregation: 'sum' },
+              subjectField: 'traineeId',
+            },
+            {
+              sourceId: 'gym',
+              measure: { aggregation: 'count' },
+              subjectField: 'traineeId',
+            },
+          ],
+        },
+      },
+      asOf
+    );
+    expect(rows).toEqual([
+      { subject: 'ana', value: 15 },
+      { subject: 'bo', value: 5 },
+    ]);
+    expect(calls).toHaveLength(2);
+  });
+
+  it('treats a formula component without a source as empty', async () => {
+    const { impl, calls } = fakeFetch(dataBody);
+    const provider = createGatewayProvider({
+      baseUrl: 'https://gw',
+      organizationId: 'org-1',
+      fetchImpl: impl,
+    });
+    const rows = await provider.queryData(
+      {
+        formula: {
+          op: 'add',
+          components: [
+            {},
+            {
+              sourceId: 'gym',
+              measure: { aggregation: 'count' },
+              subjectField: 'traineeId',
+            },
+          ],
+        },
+      },
+      asOf
+    );
+    expect(rows).toEqual([
+      { subject: 'ana', value: 2 },
+      { subject: 'bo', value: 1 },
+    ]);
+    expect(calls).toHaveLength(1);
+  });
+
   it('returns empty without querying when no source is selected', async () => {
     const { impl, calls } = fakeFetch(dataBody);
     const provider = createGatewayProvider({

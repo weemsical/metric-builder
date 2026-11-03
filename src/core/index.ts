@@ -6,7 +6,10 @@ export {
   updateFilter,
   withAggregation,
   withFilter,
+  removeComponent,
+  withComponent,
   withCoordinates,
+  withFormula,
   withMeasureField,
   withPacing,
   withRange,
@@ -17,6 +20,7 @@ export {
   withThresholds,
   withWindow,
   type Aggregation,
+  type Formula,
   type Measure,
   type MetricDefinition,
 } from './metricDefinition';
@@ -34,6 +38,7 @@ export { computeSubjectSeries } from './computeSubjectSeries';
 export { classify, type Classification } from './classify';
 export { expectedPace, elapsedFraction } from './expectedPace';
 export { rankSubjects } from './rankSubjects';
+export { computeFormula } from './computeFormula';
 export type { MetricDataProvider } from './provider';
 export { createMockProvider, type MockSourceSeed } from './mockProvider';
 export {
@@ -49,6 +54,7 @@ export type {
   FieldType,
   Filter,
   FilterOperator,
+  FormulaOp,
   Granularity,
   MetricSource,
   Pacing,

@@ -273,6 +273,50 @@ describe('MetricStage', () => {
     expect(agg).not.toHaveTextContent('Sum');
   });
 
+  it('enters formula mode from the toggle', async () => {
+    const onChange = vi.fn();
+    renderStage(createMockProvider([seed]), {}, onChange);
+    await userEvent.click(screen.getByLabelText('Formula metric'));
+    expect(onChange).toHaveBeenCalledWith({
+      formula: { op: 'divide', components: [{}, {}] },
+    });
+  });
+
+  it('renders a component stage per formula component in formula mode', async () => {
+    renderStage(createMockProvider([seed]), {
+      formula: { op: 'divide', components: [{}, {}] },
+    });
+    expect(await screen.findByLabelText('Operation')).toBeInTheDocument();
+    expect(
+      screen.getAllByLabelText('What are you measuring?')
+    ).toHaveLength(2);
+  });
+
+  it('updates the formula operation in formula mode', async () => {
+    const onChange = vi.fn();
+    renderStage(
+      createMockProvider([seed]),
+      { formula: { op: 'divide', components: [{}, {}] } },
+      onChange
+    );
+    await userEvent.selectOptions(
+      await screen.findByLabelText('Operation'),
+      'add'
+    );
+    expect(onChange).toHaveBeenCalledWith({
+      formula: { op: 'add', components: [{}, {}] },
+    });
+  });
+
+  it('exits formula mode from the toggle', async () => {
+    const onChange = vi.fn();
+    renderStage(createMockProvider([seed]), {
+      formula: { op: 'divide', components: [{}, {}] },
+    }, onChange);
+    await userEvent.click(screen.getByLabelText('Formula metric'));
+    expect(onChange).toHaveBeenCalledWith({});
+  });
+
   it('renders empty selections when no measure is set yet', async () => {
     renderStage(createMockProvider([seed]), { sourceId: 'gym' });
     expect(await screen.findByLabelText('How should we total it?')).toHaveValue('');

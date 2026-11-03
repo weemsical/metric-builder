@@ -4,9 +4,12 @@ import {
   isMetricComplete,
   removeFilter,
   updateFilter,
+  removeComponent,
   withAggregation,
+  withComponent,
   withCoordinates,
   withFilter,
+  withFormula,
   withMeasureField,
   withPacing,
   withRange,
@@ -198,6 +201,57 @@ describe('target, thresholds, pacing, rank helpers', () => {
     const next = withCoordinates(def, { latField: 'lat', lngField: 'lng' });
     expect(next.coordinates).toEqual({ latField: 'lat', lngField: 'lng' });
     expect(def.coordinates).toBeUndefined();
+  });
+});
+
+describe('formula helpers', () => {
+  const complete: MetricDefinition = {
+    sourceId: 'gym',
+    measure: { aggregation: 'count' },
+    subjectField: 'traineeId',
+  };
+
+  it('withFormula sets the formula immutably', () => {
+    const def: MetricDefinition = {};
+    const next = withFormula(def, { op: 'divide', components: [complete] });
+    expect(next.formula).toEqual({ op: 'divide', components: [complete] });
+    expect(def.formula).toBeUndefined();
+  });
+
+  it('withComponent appends, defaulting op to divide', () => {
+    const def: MetricDefinition = {};
+    const next = withComponent(def, complete);
+    expect(next.formula).toEqual({ op: 'divide', components: [complete] });
+    const after = withComponent(next, complete);
+    expect(after.formula?.components).toHaveLength(2);
+  });
+
+  it('removeComponent drops the component at an index', () => {
+    const def: MetricDefinition = {
+      formula: { op: 'add', components: [complete, complete] },
+    };
+    expect(removeComponent(def, 0).formula?.components).toHaveLength(1);
+  });
+
+  it('removeComponent on a definition with no formula yields an empty divide', () => {
+    expect(removeComponent({}, 0).formula).toEqual({
+      op: 'divide',
+      components: [],
+    });
+  });
+
+  it('isMetricComplete is true only when op set and every component complete', () => {
+    expect(
+      isMetricComplete({ formula: { op: 'divide', components: [complete, complete] } })
+    ).toBe(true);
+    expect(
+      isMetricComplete({
+        formula: { op: 'divide', components: [complete, { sourceId: 'gym' }] },
+      })
+    ).toBe(false);
+    expect(isMetricComplete({ formula: { op: 'divide', components: [] } })).toBe(
+      false
+    );
   });
 });
 

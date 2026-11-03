@@ -1,3 +1,4 @@
+import { computeFormula } from '../core/computeFormula';
 import { computeSubjectSeries } from '../core/computeSubjectSeries';
 import { computeSubjectValues } from '../core/computeSubjectValues';
 import type { MetricDefinition } from '../core/metricDefinition';
@@ -67,6 +68,20 @@ export const createGatewayProvider = (
     },
 
     queryData: async (definition: MetricDefinition, asOf: number) => {
+      if (definition.formula) {
+        const results = await Promise.all(
+          definition.formula.components.map(async (component) => {
+            if (!component.sourceId) {
+              return [];
+            }
+            const body = await request<
+              Envelope<Array<Record<string, unknown>>>
+            >(dataRequest(component.sourceId));
+            return computeSubjectValues(body.data, component, asOf);
+          })
+        );
+        return computeFormula(results, definition.formula.op);
+      }
       if (!definition.sourceId) {
         return [];
       }

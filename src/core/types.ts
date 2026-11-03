@@ -114,3 +114,5 @@ export type Pacing = {
 };
 
 export type RankMethod = 'score' | 'percentToGoal';
+
+export type FormulaOp = 'add' | 'subtract' | 'multiply' | 'divide';

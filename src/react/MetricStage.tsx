@@ -2,6 +2,7 @@ import type { Aggregation, MetricDefinition } from '../core/metricDefinition';
 import { aggregationsForFieldType } from '../core/operators';
 import type { RankMethod } from '../core/types';
 import { FilterRow } from './FilterRow';
+import { FormulaBuilder } from './FormulaBuilder';
 import { PacingSelect } from './PacingSelect';
 import { TargetInput } from './TargetInput';
 import { WindowControls } from './WindowControls';
@@ -11,6 +12,7 @@ import './MetricStage.css';
 export type MetricStageProps = {
   definition: MetricDefinition;
   onChange: (next: MetricDefinition) => void;
+  nested?: boolean;
 };
 
 const AGGREGATIONS: ReadonlyArray<{ value: Aggregation; label: string }> = [
@@ -22,7 +24,11 @@ const AGGREGATIONS: ReadonlyArray<{ value: Aggregation; label: string }> = [
   { value: 'countDistinct', label: 'Count Distinct' },
 ];
 
-export const MetricStage = ({ definition, onChange }: MetricStageProps) => {
+export const MetricStage = ({
+  definition,
+  onChange,
+  nested = false,
+}: MetricStageProps) => {
   const builder = useMetricBuilder(definition, onChange);
   const { measure } = definition;
 
@@ -38,9 +44,46 @@ export const MetricStage = ({ definition, onChange }: MetricStageProps) => {
       )
     : AGGREGATIONS;
 
+  const formulaToggle = nested ? null : (
+    <label className="metric-stage__checkbox">
+      <input
+        type="checkbox"
+        checked={Boolean(definition.formula)}
+        onChange={(event) =>
+          onChange(
+            event.target.checked
+              ? { formula: { op: 'divide', components: [{}, {}] } }
+              : {}
+          )
+        }
+      />
+      <span className="metric-stage__label">Formula metric</span>
+    </label>
+  );
+
+  if (definition.formula) {
+    return (
+      <div className="metric-stage">
+        {formulaToggle}
+        <FormulaBuilder
+          formula={definition.formula}
+          onChange={(formula) => onChange({ ...definition, formula })}
+          renderComponent={(component, onComponentChange) => (
+            <MetricStage
+              definition={component}
+              onChange={onComponentChange}
+              nested
+            />
+          )}
+        />
+      </div>
+    );
+  }
+
   if (builder.sourcesError) {
     return (
       <div className="metric-stage">
+        {formulaToggle}
         <p className="metric-stage__hint" role="alert">
           Couldn't load sources.
         </p>
@@ -50,6 +93,7 @@ export const MetricStage = ({ definition, onChange }: MetricStageProps) => {
 
   return (
     <div className="metric-stage">
+      {formulaToggle}
       <label className="metric-stage__field">
         <span className="metric-stage__label">What are you measuring?</span>
         <select

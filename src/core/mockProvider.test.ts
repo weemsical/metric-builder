@@ -89,6 +89,58 @@ describe('createMockProvider', () => {
     ]);
   });
 
+  it('computes a formula metric by combining its components', async () => {
+    const rows = await provider.queryData(
+      {
+        formula: {
+          op: 'divide',
+          components: [
+            {
+              sourceId: 'gym',
+              measure: { field: 'reps', aggregation: 'sum' },
+              subjectField: 'traineeId',
+            },
+            {
+              sourceId: 'gym',
+              measure: { aggregation: 'count' },
+              subjectField: 'traineeId',
+            },
+          ],
+        },
+      },
+      asOf
+    );
+    expect(rows).toEqual([
+      { subject: 'ana', value: 15 },
+      { subject: 'bo', value: 5 },
+      { subject: 'cy', value: 0 },
+    ]);
+  });
+
+  it('treats a formula component without a source as empty', async () => {
+    const rows = await provider.queryData(
+      {
+        formula: {
+          op: 'add',
+          components: [
+            {},
+            {
+              sourceId: 'gym',
+              measure: { aggregation: 'count' },
+              subjectField: 'traineeId',
+            },
+          ],
+        },
+      },
+      asOf
+    );
+    expect(rows).toEqual([
+      { subject: 'ana', value: 2 },
+      { subject: 'bo', value: 1 },
+      { subject: 'cy', value: 1 },
+    ]);
+  });
+
   it('returns an empty series when no source is selected', async () => {
     expect(await provider.querySeries!({}, asOf)).toEqual([]);
   });
