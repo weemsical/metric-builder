@@ -91,18 +91,30 @@ export const App = () => {
   }, [definition]);
 
   const complete = isMetricComplete(definition);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+  }, [dark]);
 
   return (
     <MetricBuilderProvider dataProvider={provider} metricStore={store}>
       <main
         style={{
-          fontFamily: 'system-ui, sans-serif',
+          fontFamily: 'var(--pui-font-sans)',
           maxWidth: 760,
           margin: '2rem auto',
           padding: '0 1rem',
-          color: '#111827',
+          color: 'var(--pui-color-text-strong)',
         }}
       >
+        <button
+          type="button"
+          onClick={() => setDark((value) => !value)}
+          style={{ float: 'right' }}
+        >
+          {dark ? '☀ Light' : '🌙 Dark'}
+        </button>
         <h1 style={{ marginBottom: '0.25rem' }}>Metric Builder</h1>
         <p style={{ marginTop: 0, color: '#6b7280' }}>
           Pick a source, define a measure, group by a subject. Try{' '}

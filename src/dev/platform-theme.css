@@ -1,0 +1,67 @@
+:root {
+  --pui-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --pui-font-size-xs: 12px;
+  --pui-font-size-sm: 13px;
+  --pui-font-size-md: 14px;
+  --pui-font-size-lg: 16px;
+  --pui-font-size-xl: 20px;
+
+  --pui-control-height-sm: 28px;
+  --pui-control-height-md: 40px;
+
+  --pui-radius-sm: 4px;
+  --pui-radius-md: 6px;
+  --pui-radius-lg: 8px;
+  --pui-radius-pill: 9999px;
+
+  --pui-shadow-sm: 0px 4px 12px rgba(0, 0, 0, 0.04);
+  --pui-shadow-md: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  --pui-shadow-lg: 0px 4px 8px rgba(0, 0, 0, 0.2);
+
+  --pui-gray-1: #f4f8f9;
+  --pui-gray-2: #d4dcde;
+  --pui-gray-3: #a3afb1;
+  --pui-gray-4: #6a7476;
+  --pui-gray-5: #28434a;
+
+  --pui-color-surface: #ffffff;
+  --pui-color-text-strong: #17282d;
+  --pui-color-disabled: #dee3e4;
+  --pui-color-icon: #869194;
+  --pui-color-on-fill: #ffffff;
+
+  --pui-color-primary: #007a98;
+  --pui-color-primary-hover: #00637b;
+  --pui-color-primary-strong: #015069;
+  --pui-color-primary-subtle: #e0f5fa;
+  --pui-color-primary-subtle-hover: #a7edff;
+  --pui-color-accent: #00a9d3;
+  --pui-color-focus-ring: #63a6b2;
+
+  --pui-color-success: #25856e;
+  --pui-color-danger: #b74337;
+  --pui-color-danger-hover: #9b362b;
+  --pui-color-warning: #ffb75d;
+}
+
+html.dark {
+  --pui-color-surface: #1c3840;
+  --pui-gray-1: #22343b;
+  --pui-gray-2: #28434a;
+  --pui-gray-3: #a3afb1;
+  --pui-gray-4: #d4dcde;
+  --pui-gray-5: #ffffff;
+  --pui-color-text-strong: #f4f8f9;
+  --pui-color-disabled: #28434a;
+  --pui-color-icon: #7a8d91;
+  --pui-color-primary-subtle: #0a2e38;
+  --pui-color-primary-subtle-hover: #134a58;
+  --pui-color-danger: #ff6891;
+}
+
+body {
+  background: var(--pui-color-surface);
+  color: var(--pui-color-text-strong);
+  font-family: var(--pui-font-sans);
+}

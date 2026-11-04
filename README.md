@@ -49,6 +49,25 @@ full wiring.
 - [`docs/plan-metric-builder-roadmap.md`](docs/plan-metric-builder-roadmap.md) — phased plan and
   resolved design decisions.
 
+## Theming
+
+`MetricStage` ships its own scoped stylesheet (auto-injected) so it looks and behaves the same in
+every host, while fitting each app's theme. It styles against the `@ascentcloud/platform-ui` token
+contract — `--pui-*` CSS custom properties — with hard-coded fallbacks:
+
+```css
+color: var(--pui-color-text-strong, #17282d);
+border-radius: var(--pui-radius-md, 6px);
+```
+
+- In a platform app that imports `@ascentcloud/platform-ui/style.css`, the builder inherits that
+  app's theme automatically — including per-app overrides like dark mode (channel redefines `--pui-*`
+  under `html.dark`). No per-host styling needed.
+- Standalone (this playground, Storybook, or a non-platform host like L11), the fallbacks render a
+  sensible default. There is **no hard dependency** on `platform-ui`.
+- All rules are scoped under `.metric-stage` with a local reset, so host CSS can't bleed in and the
+  builder's styles can't leak out. Internal `--mb-*` variables alias the `--pui-*` tokens.
+
 ## Peer dependencies
 
 `react` and `react-dom` are provided by the host. The `data` adapter uses the platform `fetch` API
