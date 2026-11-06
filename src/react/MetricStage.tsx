@@ -1,3 +1,4 @@
+import { isMetricComplete } from '../core/metricDefinition';
 import type { Aggregation, MetricDefinition } from '../core/metricDefinition';
 import { aggregationsForFieldType } from '../core/operators';
 import type { RankMethod } from '../core/types';
@@ -180,76 +181,94 @@ export const MetricStage = ({
             </select>
           </label>
 
-          <div className="metric-stage__filters">
-            <span className="metric-stage__label">Filters</span>
-            {builder.filters.map((filter, index) => (
-              <FilterRow
-                key={index}
-                filter={filter}
-                fields={builder.fields}
-                operatorsFor={builder.operatorsFor}
-                onChange={(next) => builder.changeFilter(index, next)}
-                onRemove={() => builder.removeFilter(index)}
+          {isMetricComplete(definition) && (
+            <div className="metric-stage__section">
+              <span className="metric-stage__section-title">
+                Refine (optional)
+              </span>
+
+              <div className="metric-stage__filters">
+                <span className="metric-stage__label">Filters</span>
+                {builder.filters.map((filter, index) => (
+                  <FilterRow
+                    key={index}
+                    filter={filter}
+                    fields={builder.fields}
+                    operatorsFor={builder.operatorsFor}
+                    onChange={(next) => builder.changeFilter(index, next)}
+                    onRemove={() => builder.removeFilter(index)}
+                  />
+                ))}
+                <button
+                  type="button"
+                  disabled={builder.fields.length === 0}
+                  onClick={() =>
+                    builder.addFilter({
+                      field: builder.fields[0].apiName,
+                      operator: builder.operatorsFor(
+                        builder.fields[0].apiName
+                      )[0],
+                      value: '',
+                    })
+                  }
+                >
+                  Add filter
+                </button>
+
+                {builder.filters.length >= 2 && (
+                  <label className="metric-stage__field">
+                    <span className="metric-stage__label">
+                      Advanced filter logic
+                    </span>
+                    <input
+                      className="metric-stage__select"
+                      placeholder="e.g. 1 AND (2 OR 3)"
+                      value={builder.filterLogic ?? ''}
+                      onChange={(event) =>
+                        builder.setFilterLogic(event.target.value)
+                      }
+                    />
+                  </label>
+                )}
+              </div>
+
+              <WindowControls
+                dateFields={builder.dateFields}
+                window={builder.window}
+                range={builder.range}
+                onWindowChange={builder.setWindow}
+                onRangeChange={builder.setRange}
               />
-            ))}
-            <button
-              type="button"
-              disabled={builder.fields.length === 0}
-              onClick={() =>
-                builder.addFilter({
-                  field: builder.fields[0].apiName,
-                  operator: builder.operatorsFor(builder.fields[0].apiName)[0],
-                  value: '',
-                })
-              }
-            >
-              Add filter
-            </button>
 
-            <label className="metric-stage__field">
-              <span className="metric-stage__label">Advanced filter logic</span>
-              <input
-                className="metric-stage__select"
-                placeholder="e.g. 1 AND (2 OR 3)"
-                value={builder.filterLogic ?? ''}
-                onChange={(event) => builder.setFilterLogic(event.target.value)}
+              <TargetInput
+                target={builder.target}
+                thresholds={builder.thresholds}
+                onTargetChange={builder.setTarget}
+                onThresholdsChange={builder.setThresholds}
               />
-            </label>
-          </div>
 
-          <WindowControls
-            dateFields={builder.dateFields}
-            window={builder.window}
-            range={builder.range}
-            onWindowChange={builder.setWindow}
-            onRangeChange={builder.setRange}
-          />
+              {builder.window && (
+                <PacingSelect
+                  pacing={builder.pacing}
+                  onPacingChange={builder.setPacing}
+                />
+              )}
 
-          <TargetInput
-            target={builder.target}
-            thresholds={builder.thresholds}
-            onTargetChange={builder.setTarget}
-            onThresholdsChange={builder.setThresholds}
-          />
-
-          <PacingSelect
-            pacing={builder.pacing}
-            onPacingChange={builder.setPacing}
-          />
-
-          <label className="metric-stage__field">
-            <span className="metric-stage__label">Rank by</span>
-            <select
-              className="metric-stage__select"
-              value={builder.rankMethod ?? 'score'}
-              onChange={(event) =>
-                builder.setRankMethod(event.target.value as RankMethod)
-              }
-            >
-              <option value="score">Score</option>
-              <option value="percentToGoal">Percent to goal</option>
-            </select>
-          </label>
+              <label className="metric-stage__field">
+                <span className="metric-stage__label">Rank by</span>
+                <select
+                  className="metric-stage__select"
+                  value={builder.rankMethod ?? 'score'}
+                  onChange={(event) =>
+                    builder.setRankMethod(event.target.value as RankMethod)
+                  }
+                >
+                  <option value="score">Score</option>
+                  <option value="percentToGoal">Percent to goal</option>
+                </select>
+              </label>
+            </div>
+          )}
         </>
       )}
     </div>

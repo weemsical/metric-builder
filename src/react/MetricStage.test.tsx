@@ -144,14 +144,20 @@ describe('MetricStage', () => {
     const onChange = vi.fn();
     renderStage(
       createMockProvider([seed]),
-      { sourceId: 'gym', measure: { aggregation: 'count' } },
+      {
+        sourceId: 'gym',
+        measure: { aggregation: 'count' },
+        subjectField: 'trainerId',
+      },
       onChange
     );
-    await screen.findByLabelText('Group results by');
-    await userEvent.click(screen.getByRole('button', { name: /add filter/i }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: /add filter/i })
+    );
     expect(onChange).toHaveBeenCalledWith({
       sourceId: 'gym',
       measure: { aggregation: 'count' },
+      subjectField: 'trainerId',
       filters: [{ field: 'traineeId', operator: 'equals', value: '' }],
     });
   });
@@ -160,6 +166,7 @@ describe('MetricStage', () => {
     renderStage(createMockProvider([seed]), {
       sourceId: 'gym',
       measure: { aggregation: 'count' },
+      subjectField: 'trainerId',
       filters: [{ field: 'reps', operator: 'gte', value: 30 }],
     });
     const operator = await screen.findByLabelText('Operator');
@@ -174,6 +181,7 @@ describe('MetricStage', () => {
       {
         sourceId: 'gym',
         measure: { aggregation: 'count' },
+        subjectField: 'trainerId',
         filters: [{ field: 'reps', operator: 'gte', value: 30 }],
       },
       onChange
@@ -182,6 +190,7 @@ describe('MetricStage', () => {
     expect(onChange).toHaveBeenCalledWith({
       sourceId: 'gym',
       measure: { aggregation: 'count' },
+      subjectField: 'trainerId',
       filters: [{ field: 'reps', operator: 'lt', value: 30 }],
     });
 
@@ -189,15 +198,36 @@ describe('MetricStage', () => {
     expect(onChange).toHaveBeenCalledWith({
       sourceId: 'gym',
       measure: { aggregation: 'count' },
+      subjectField: 'trainerId',
       filters: [],
     });
+  });
+
+  it('hides optional refinements until the metric is complete', async () => {
+    renderStage(createMockProvider([seed]), {
+      sourceId: 'gym',
+      measure: { aggregation: 'count' },
+    });
+    await screen.findByLabelText('Group results by');
+    expect(
+      screen.queryByRole('button', { name: /add filter/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Trend over which date?')
+    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Goal value')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Rank by')).not.toBeInTheDocument();
   });
 
   it('selects a trend window from the date fields', async () => {
     const onChange = vi.fn();
     renderStage(
       createMockProvider([seed]),
-      { sourceId: 'gym', measure: { aggregation: 'count' } },
+      {
+        sourceId: 'gym',
+        measure: { aggregation: 'count' },
+        subjectField: 'trainerId',
+      },
       onChange
     );
     await userEvent.selectOptions(
@@ -207,15 +237,37 @@ describe('MetricStage', () => {
     expect(onChange).toHaveBeenCalledWith({
       sourceId: 'gym',
       measure: { aggregation: 'count' },
+      subjectField: 'trainerId',
       window: { field: 'closedAt', granularity: 'daily' },
     });
   });
 
-  it('edits advanced filter logic', async () => {
+  it('hides advanced filter logic until two filters exist', async () => {
+    renderStage(createMockProvider([seed]), {
+      sourceId: 'gym',
+      measure: { aggregation: 'count' },
+      subjectField: 'trainerId',
+      filters: [{ field: 'reps', operator: 'gte', value: 30 }],
+    });
+    await screen.findByLabelText('Operator');
+    expect(
+      screen.queryByLabelText('Advanced filter logic')
+    ).not.toBeInTheDocument();
+  });
+
+  it('edits advanced filter logic once two or more filters exist', async () => {
     const onChange = vi.fn();
     renderStage(
       createMockProvider([seed]),
-      { sourceId: 'gym', measure: { aggregation: 'count' } },
+      {
+        sourceId: 'gym',
+        measure: { aggregation: 'count' },
+        subjectField: 'trainerId',
+        filters: [
+          { field: 'reps', operator: 'gte', value: 30 },
+          { field: 'minutes', operator: 'gte', value: 10 },
+        ],
+      },
       onChange
     );
     fireEvent.change(await screen.findByLabelText('Advanced filter logic'), {
@@ -224,30 +276,45 @@ describe('MetricStage', () => {
     expect(onChange).toHaveBeenCalledWith({
       sourceId: 'gym',
       measure: { aggregation: 'count' },
+      subjectField: 'trainerId',
+      filters: [
+        { field: 'reps', operator: 'gte', value: 30 },
+        { field: 'minutes', operator: 'gte', value: 10 },
+      ],
       filterLogic: '1 AND 2',
     });
   });
 
+  it('hides pacing until a trend window is set', async () => {
+    renderStage(createMockProvider([seed]), {
+      sourceId: 'gym',
+      measure: { aggregation: 'count' },
+      subjectField: 'trainerId',
+    });
+    await screen.findByLabelText('Goal value');
+    expect(screen.queryByLabelText('Pacing')).not.toBeInTheDocument();
+  });
+
   it('sets a goal, pacing, and rank method', async () => {
     const onChange = vi.fn();
-    renderStage(
-      createMockProvider([seed]),
-      { sourceId: 'gym', measure: { aggregation: 'count' } },
-      onChange
-    );
+    const base = {
+      sourceId: 'gym',
+      measure: { aggregation: 'count' as const },
+      subjectField: 'trainerId',
+      window: { field: 'closedAt', granularity: 'daily' as const },
+    };
+    renderStage(createMockProvider([seed]), base, onChange);
     fireEvent.change(await screen.findByLabelText('Goal value'), {
       target: { value: '100' },
     });
     expect(onChange).toHaveBeenCalledWith({
-      sourceId: 'gym',
-      measure: { aggregation: 'count' },
+      ...base,
       target: { value: 100, direction: 'higherIsBetter' },
     });
 
     await userEvent.selectOptions(screen.getByLabelText('Pacing'), 'steady');
     expect(onChange).toHaveBeenCalledWith({
-      sourceId: 'gym',
-      measure: { aggregation: 'count' },
+      ...base,
       pacing: { strategy: 'steady' },
     });
 
@@ -256,8 +323,7 @@ describe('MetricStage', () => {
       'percentToGoal'
     );
     expect(onChange).toHaveBeenCalledWith({
-      sourceId: 'gym',
-      measure: { aggregation: 'count' },
+      ...base,
       rankMethod: 'percentToGoal',
     });
   });
